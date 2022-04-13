@@ -3,7 +3,6 @@
     "tsconfig-paths"
   ],
   "presets": [
-    "soli2d",
     "@babel/typescript"
   ],
   "env": {

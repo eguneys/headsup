@@ -1,8 +1,6 @@
 {
   "compilerOptions": {
     "strict": true,
-    "jsx": "preserve",
-    "jsxImportSource": "solid-js",
     "module": "esnext",
     "moduleResolution": "node",
     "inlineSources": true,
