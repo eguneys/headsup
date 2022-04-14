@@ -10,15 +10,16 @@ export const ticks = {
   one: 1 * rate
 }
 
-export const lum = (color: Color) => color[1] * 2
-export const hue = (color: Color) => color[0] * 2
+export type Color = number
 
-export const colors = {
-  sand2: [3, 1],
-  blue2: [6, 1],
-  red2: [4, 2],
-  red3: [4, 3],
-  green2: [2, 3]
-}
+export const dark: Color = 0
+export const cyan: Color = 1
+export const green: Color = 2
+export const sand: Color = 3
+export const red: Color = 4
+export const purple: Color = 5
+export const blue: Color = 6
+
+export const colors = [dark, cyan, green, sand, red, purple, blue]
 
 
