@@ -13,11 +13,11 @@ export type Slice = {
   frames?: Array<SliceFrame>
 }
 
-const slice = (name: string) => {
-  return {
-    name
-  }
+export type Group = {
+  name: string
 }
+
+export type Tab = 1 | 2
 
 export default class Ctrl {
 
@@ -26,22 +26,48 @@ export default class Ctrl {
     return 'new_slice' + (this._id++)
   }
 
+  get newGroupName() {
+    return 'new_group' + (this._id++)
+  }
+
   option_slices: StoredJsonProp<Array<Slice>> = storedJsonProp('soureditor.slices', () => [])
+  option_groups: StoredJsonProp<Array<Group>> = storedJsonProp('soureditor.groups', () => [])
+  option_tab: StoredJsonProp<Tab> = storedJsonProp('soureditor.tab', () => 1)
+
+  get current_tab() {
+    return this.option_tab()
+  }
+
+  set current_tab(v: Tab) {
+    this.option_tab(v)
+  }
 
 
   image!: HTMLImageElement
 
   slices: Array<Slice>
+  groups: Array<Group>
 
   _set_data(image: HTMLImageElement) {
     this.image = image
     this.slices = this.option_slices()
+    this.groups = this.option_groups()
     return this;
   }
 
   redraw: Redraw
 
-  ground!: AllPlays
+  _ground!: [AllPlays, Handler]
+
+  get ground() {
+    return this._ground[0]
+  }
+
+  get ground_dispose() {
+    return this._ground[1]
+  }
+
+
 
   constructor(readonly redraw: Redraw) { }
 
@@ -53,6 +79,31 @@ export default class Ctrl {
     return this
   }
 
+  add_group() {
+    this.groups.push({
+      name: this.newGroupName
+    })
+    this._save_groups()
+  }
+
+  _save_groups() {
+    this.option_groups(this.groups)
+  }
+
+  select_group(group: Group) {
+
+  }
+
+  save_group(group: Group) {
+    this._save_groups()
+  }
+
+
+  remove_group(group: Group) {
+    this.groups.splice(this.groups.indexOf(group), 1)
+    this._save_groups()
+  }
+
   _save_slices() {
     this.option_slices(this.slices)
   }
@@ -61,9 +112,7 @@ export default class Ctrl {
     this.slices.push({
       name: this.newSliceName
     })
-
     this._save_slices()
-
   }
 
   select(slice: Slice) {
@@ -83,9 +132,11 @@ export default class Ctrl {
   }
 
 
-  setGround(ground: AllPlays) {
-
-    this.ground = ground
+  setGround(ground: [AllPlays, Handler]) {
+    if (this._ground) {
+      this.ground_dispose()
+    }
+    this._ground = ground
   }
 
 }

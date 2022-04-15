@@ -2,8 +2,9 @@ import { Soli2d, loop } from 'soli2d'
 import Input from './input'
 import Mouse from './mouse'
 import AllPlays from './play'
+import { Config } from './play-config'
 
-export default function ground(image: HTMLImageElement, element: HTMLElement) {
+export default function ground(image: HTMLImageElement, element: HTMLElement, config: Config = {}) {
     let [_render, root, $canvas] = Soli2d(element, image, 1920, 1080)
 
     let input = new Input()
@@ -15,11 +16,11 @@ export default function ground(image: HTMLImageElement, element: HTMLElement) {
       image
     }
 
-    let play = new AllPlays(ctx, root).init()
+    let play = new AllPlays(ctx, root)._set_data(config).init()
     play.add_after_init()
     root._update_world()
 
-    loop((dt, dt0) => {
+    let loop_dispose = loop((dt, dt0) => {
       mouse.update(dt, dt0)
       input.update(dt, dt0)
       play.update(dt, dt0)
@@ -28,5 +29,9 @@ export default function ground(image: HTMLImageElement, element: HTMLElement) {
       _render()
     })
 
-    return play
+    let dispose = () => {
+      loop_dispose()
+      mouse.dispose()
+    }
+    return [play, dispose]
 }

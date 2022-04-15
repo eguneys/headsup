@@ -5,7 +5,86 @@ import ground from './ground'
 
 export default function view(ctrl: Ctrl) {
 
-  return h('div.s-wrap', [
+  let content = ctrl.current_tab === 1 ? slicer(ctrl) : grouper(ctrl)
+
+  return h('div.s-wrap', [h('div.tabs', [
+    h('span', {
+      on: {
+        click: (e) => {
+          ctrl.current_tab = 1
+          ctrl.redraw()
+        }
+      }
+    }, 'Slice'),
+    h('span', {
+      on: {
+        click(e) {
+          ctrl.current_tab = 2
+          ctrl.redraw()
+        }
+      }
+    }, 'Group')
+  ]), content])
+
+}
+
+
+function grouper(ctrl: Ctrl) {
+  return h('div.content.grouper', [
+    h('div.side', [
+    groups(ctrl),
+    h('button', {
+        on: {
+          click() {
+            ctrl.add_group()
+            ctrl.redraw()
+          }
+        }
+      }, 'Add group')
+    ]),
+    h('div.board', {
+      hook: {
+        insert(vnode: VNode) {
+          ctrl.setGround(ground(ctrl.image, vnode.elm as HTMLElement, { grouper: true }))
+        }
+      }
+    })
+  ])
+}
+
+function groups(ctrl: Ctrl) {
+  return h('div.groups', ctrl.groups.map(group =>
+             h('div.group', [h('input', {
+               key: group.name,
+               attrs: {
+                 value: group.name,
+               },
+               on: {
+                 focus(e) {
+                   ctrl.select_group(group)
+                 },
+                 change(e) {
+                   group.name = e.target.value
+                   ctrl.redraw()
+                 }
+               }
+             }), h('button', {
+                 on: {
+                   click() {
+                     if (group.name === '') {
+                       ctrl.remove_group(group)
+                     } else {
+                       ctrl.save_group(group)
+                     }
+                     ctrl.redraw()
+                   }
+                 }
+             }, 'Ok')])
+  ))
+}
+
+function slicer(ctrl: Ctrl) {
+  return h('div.content.slicer', [
     h('div.side', [
       slices(ctrl),
       h('button', {
@@ -26,7 +105,6 @@ export default function view(ctrl: Ctrl) {
       }
     })
   ])
-
 }
 
 function slices(ctrl: Ctrl) {

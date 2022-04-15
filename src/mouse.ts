@@ -29,7 +29,6 @@ function move_threshold(move: NumberPair, start: NumberPair) {
 
   let length = Math.sqrt(dx * dx + dy * dy)
 
-
   return length > 30
 }
 
@@ -99,10 +98,14 @@ export default class Mouse {
     return res
   }
 
+  disposes: Array<Handler> = []
+  dispose() {
+    this.disposes.forEach(_ => _())
+  }
 
   init() {
 
-    let { $canvas } =  this
+    let { $canvas, disposes } =  this
 
     $canvas.addEventListener('wheel', ev => {
       this._wheel = Math.sign(ev.deltaY)
@@ -124,18 +127,24 @@ export default class Mouse {
       }
     })
 
-    document.addEventListener('mouseup', ev => {
+    let onMouseUp = ev => {
       if (this._drag) {
         this._drag.drop = this.eventPosition(ev)
         this._drop0 = this._drag
       }
-    })
+    }
+    document.addEventListener('mouseup', onMouseUp)
+
+    disposes.push(() => document.removeEventListener('mouseup', onMouseUp))
 
     const onScroll = () => {
       this._bounds = undefined
     }
     window.addEventListener('resize', onScroll)
     document.addEventListener('scroll', onScroll)
+
+    disposes.push(() => window.removeEventListener('resize', onScroll))
+    disposes.push(() => document.removeEventListener('scroll', onScroll))
 
     return this
   }
@@ -150,8 +159,8 @@ export default class Mouse {
 
     if (this._drag) {
       this._drag.move0 = this._drag.move
-      if (this._drag.r_move) {
-        if (move_threshold(this._drag.r_move, this._drag.start)) {
+      if (this._drag.r_move !== undefined) {
+        if (this._drag.move || move_threshold(this._drag.r_move, this._drag.start)) {
           this._drag.move = this._drag.r_move
         }
       }

@@ -3,6 +3,7 @@ import { Quad, Transform, Vec2 } from 'soli2d'
 import { PlayWithTransform, WithPlays, ColorFactory } from './base'
 import { dark } from './shared'
 import { MouseDrag } from './mouse'
+import { Config } from './play-config'
 
 const Template = new Transform()
 
@@ -340,12 +341,77 @@ class Slicer extends WithPlays {
 }
 
 
+class Grouper extends WithPlays {
+
+  bg: GridBackground
+
+  _init() {
+    this.container = Template.clone
+
+    this.pan_zoom_scale = Template.clone
+    this.pan_zoom_scale.scale.set_in(1920/320, 1080/180)
+    this.pan_zoom_scale._set_parent(this.container)
+
+
+    this.bg = new GridBackground(this.ctx, this.pan_zoom_scale, this.plays)
+    ._set_data(Vec2.make(320, 180))
+    .init()
+
+    this.bg.add_after_init()
+
+  }
+
+  _update(dt: number, dt0: number) {
+
+    let { wheel, drag, click } = this.mouse
+
+    if (drag && drag.button === 1) {
+      if (!this.pan_drag) {
+        this.pan_drag = DragDecay.make(drag, 
+                                       this.pan_zoom_scale.translate)
+      }
+    }
+
+    if (drag && drag.button === 0) {
+      if (!this.select_drag) {
+        this.select_drag = DragDecay.make(drag,
+                                          this.pan_zoom_scale.translate)
+      }
+    }
+
+    if (this.pan_drag) {
+
+      this.pan_zoom_scale.x = this.pan_drag.translate.x
+      this.pan_zoom_scale.y = this.pan_drag.translate.y
+
+      if (this.pan_drag.drop) {
+        this.pan_drag = undefined
+      }
+    }
+
+
+    if (wheel !== 0) {
+      this.pan_zoom_scale.scale.x -= this.pan_zoom_scale.scale.x * 0.3 * wheel
+      this.pan_zoom_scale.scale.y -= this.pan_zoom_scale.scale.y * 0.3 * wheel
+    }
+
+
+
+  }
+
+
+}
+
+
 export default class AllPlays extends PlayWithTransform {
 
   colors = new ColorFactory(this.image)
 
   slicer!: Slicer
 
+  get config(): Config {
+    return this.data as Config
+  }
 
   get slices() {
     return this.slicer.for_save_select_area_rects
@@ -360,10 +426,17 @@ export default class AllPlays extends PlayWithTransform {
 
     this.slicer = new Slicer(this.ctx, this.container, this).init()
 
-    this.slicer.add_after_init()
+    this.grouper = new Grouper(this.ctx, this.container, this).init()
+
+    if (this.config.grouper) {
+      this.grouper.add_after_init()
+    } else {
+      this.slicer.add_after_init()
+    }
   }
 
   _update(dt: number, dt0: number) {
     this.slicer.update(dt, dt0)
+    this.grouper.update(dt, dt0)
   }
 }
