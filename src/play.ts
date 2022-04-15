@@ -1,14 +1,20 @@
 import { ticks } from './shared'
 import { Quad, Transform, Vec2 } from 'soli2d'
 import { PlayWithTransform, WithPlays, ColorFactory } from './base'
-import { dark } from './shared'
+import { dark, red } from './shared'
 import { MouseDrag } from './mouse'
 import { Config } from './play-config'
 
+import { T_QN, T_QUAD, scene_import } from './scene-import'
+
 const Template = new Transform()
 
-function vec_transform(vec: Vec2, transform: Transform) {
+function vec_transform_inverse(vec: Vec2, transform: Transform) {
   return vec.sub(transform.translate).div(transform.scale)
+}
+
+function vec_transform(vec: Vec2, transform: Transform) {
+  return vec.add(transform.translate).mul(transform.scale)
 }
 
 class SelectAreaRectangle extends WithPlays {
@@ -298,7 +304,7 @@ class Slicer extends WithPlays {
 
     if (click) {
 
-      let click_on_pan = vec_transform(Vec2.make(...click), this.pan_zoom_scale)
+      let click_on_pan = vec_transform_inverse(Vec2.make(...click), this.pan_zoom_scale)
 
       let [select_area_rect] = this.select_area_rects
 
@@ -340,10 +346,55 @@ class Slicer extends WithPlays {
 
 }
 
+class TransformPlusHandle extends WithPlays {
+
+
+  a_red = this.colors.quad(red, 2)
+
+
+  get plus() { return this.data as TransformPlus }
+  get handle() { return this.plus.data }
+
+  tile!: Transform
+
+  _init() {
+    this.container = Template.clone
+
+    let { a_red } = this
+
+    this.tile = Template.clone
+    this.tile.quad = a_red
+    this.tile.size = Vec2.make(4, 2)
+    this.tile._set_parent(this.container)
+    this.tile.translate = vec_transform(Vec2.make(0, 0), this.handle)
+  }
+
+  _update(dt: number, dt0: number) {
+ 
+    let { drag } = this.mouse
+
+    if (drag && drag.button === 0) {
+      // TODO better way to transform vectors
+      this.tile.translate.x, vec_transform_inverse(Vec2.make(...drag.start), this.container._parent._parent).x)
+    }
+
+
+  }
+}
 
 class Grouper extends WithPlays {
 
   bg: GridBackground
+
+  select_transform?: SelectTransform
+
+  _scene!: TransformPlus
+
+  _handles!: TransformPlusHandles
+  
+  pan_zoom_scale!: Transform
+  pan_zoom_scale_handles!: Transform
+  pan_zoom_scale_children!: Transform
 
   _init() {
     this.container = Template.clone
@@ -352,13 +403,48 @@ class Grouper extends WithPlays {
     this.pan_zoom_scale.scale.set_in(1920/320, 1080/180)
     this.pan_zoom_scale._set_parent(this.container)
 
-
     this.bg = new GridBackground(this.ctx, this.pan_zoom_scale, this.plays)
     ._set_data(Vec2.make(320, 180))
     .init()
 
     this.bg.add_after_init()
 
+    this.pan_zoom_scale_children = Template.clone
+    this.pan_zoom_scale_children._set_parent(this.pan_zoom_scale)
+
+    this.pan_zoom_scale_handles = Template.clone
+    this.pan_zoom_scale_handles._set_parent(this.pan_zoom_scale)
+
+
+
+
+    let example_scene = [{
+      q: [[0, 96, 30, 40], [0, 80, 6, 6, 100, 100]],
+      c: []
+    }]
+
+    this._scene = scene_import(this.image, example_scene)
+
+    this._handles = this._scene.children.flatMap(_ => {
+      if (_.type === T_QN) {
+        return _.children.flatMap(_ => {
+          if (_.type === T_QUAD) {
+            return _.children.map(_ => {
+              let res = new TransformPlusHandle(this.ctx, this.pan_zoom_scale_handles, this.plays)
+              ._set_data(_)
+              .init()
+
+              res.add_after_init()
+              return res
+            })
+          }
+          return []
+        })
+      }
+      return []
+    })
+
+    this._scene.data._set_parent(this.pan_zoom_scale_children)
   }
 
   _update(dt: number, dt0: number) {
@@ -396,6 +482,7 @@ class Grouper extends WithPlays {
     }
 
 
+    this._handles.forEach(_ => _.update(dt, dt0))
 
   }
 
