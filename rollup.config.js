@@ -6,6 +6,7 @@ const image = require('@rollup/plugin-image')
 
 const serve = require('rollup-plugin-serve')
 const livereload = require('rollup-plugin-livereload')
+const css = require('rollup-plugin-import-css')
 
 const { terser } = require('rollup-plugin-terser')
 
@@ -31,11 +32,12 @@ export default args => {
     plugins: [
       nodeResolve({ extensions, browser: true }),
       babel({ extensions, babelHelpers: 'bundled' }),
+     image(),
+      css(),
       htmlTemplate({
         template: 'src/index.html',
         target: 'index.html'
       }),
-      image(),
       ...(prod ? [] : [
         serve({ contentBase: 'dist', port: 3000 }),
         livereload({ watch: 'dist', port: 8080 })

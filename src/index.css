@@ -1,0 +1,38 @@
+.s-wrap {
+  display: flex;
+  margin-top: 1em;
+}
+
+.board {
+  flex: 4 1 0;
+  background: black;
+}
+
+.side {
+  flex-wrap: nowrap;
+  flex: 1 1 0;
+  padding: 0 0.5em;
+
+}
+.slices {
+  display: flex;
+  flex-flow: column;
+  gap: 0.2em;
+}
+
+.slices .slice {
+  display: flex;
+}
+
+.slice input {
+  width: 100%;
+}
+
+.slice button {
+  border: none;
+  background: pink;
+  padding: 0.5em;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+}

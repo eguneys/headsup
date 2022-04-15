@@ -185,6 +185,8 @@ class DragDecay {
   }
 }
 
+export type Handler = () => void;
+
 class Slicer extends WithPlays {
 
   bg: GridBackground
@@ -220,6 +222,21 @@ class Slicer extends WithPlays {
 
 
     this.select_area_rects = []
+  }
+
+  set_select_area_rects(slices: Array<Slice>) {
+    this.select_area_rects.forEach(_ => _.remove())
+
+    slices.forEach(slice => this.add_select_area_rect(slice.x, slice.y, slice.w, slice.h))
+  }
+
+  get for_save_select_area_rects() {
+    return this.select_area_rects.map(_ => ({
+      x: _.x,
+      y: _.y,
+      w: _.width,
+      h: _.height
+    }))
   }
 
   add_select_area_rect(x: number, y: number, w: number, h: number) {
@@ -273,7 +290,6 @@ class Slicer extends WithPlays {
                                 Math.ceil(translate_zoomed.x),
                                 Math.ceil(translate_zoomed.y))
 
-
       if (this.select_drag.drop) {
         this.select_drag = undefined
       }
@@ -297,6 +313,7 @@ class Slicer extends WithPlays {
         if (nb > 0) {
 
           this.select_area_rects.forEach(_ => _.remove())
+          this.select_area_rects = []
 
           Array.from(Array(nb).keys()).map(i =>
                this.add_select_area_rect(
@@ -305,8 +322,6 @@ class Slicer extends WithPlays {
                  width,
                  ref_on_pan.size.y
                ))
-
-          
         }
       }
 
@@ -330,6 +345,15 @@ export default class AllPlays extends PlayWithTransform {
   colors = new ColorFactory(this.image)
 
   slicer!: Slicer
+
+
+  get slices() {
+    return this.slicer.for_save_select_area_rects
+  }
+
+  set slices(slices: Array<SliceFrame>) {
+    this.slicer.set_select_area_rects(slices)
+  }
 
   _init() {
     this.container = Template.clone
