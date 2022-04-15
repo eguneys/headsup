@@ -23,6 +23,16 @@ export function eventPosition(e: MouchEvent): [number, number] | undefined {
   }
 }
 
+function move_threshold(move: NumberPair, start: NumberPair) {
+  let dx = move[0] - start[0],
+    dy = move[1] - start[1]
+
+  let length = Math.sqrt(dx * dx + dy * dy)
+
+
+  return length > 30
+}
+
 export default class Mouse {
 
   _wheel: Direction = 0
@@ -141,7 +151,9 @@ export default class Mouse {
     if (this._drag) {
       this._drag.move0 = this._drag.move
       if (this._drag.r_move) {
-        this._drag.move = this._drag.r_move
+        if (move_threshold(this._drag.r_move, this._drag.start)) {
+          this._drag.move = this._drag.r_move
+        }
       }
       if (!this._drop0) {
         if (this._drag.drop) {

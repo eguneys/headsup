@@ -81,6 +81,13 @@ export abstract class PlayWithTransform extends Play {
 
   container!: Transform
 
+  get x() {
+    return this.container.x
+  }
+
+  get y() {
+    return this.container.y
+  }
 
   set x(x: number) {
     this.container.x = x
@@ -118,6 +125,12 @@ export abstract class PlayWithTransform extends Play {
 
 export abstract class WithPlays extends PlayWithTransform {
 
+
+  get clone() {
+    let res = new this.constructor(this.ctx, this.parent, this.plays)._set_data(this.data).init()
+    return this
+  }
+
   get colors() { return this.plays.colors }
 
   constructor(ctx: Context, parent: Transform, readonly plays: AllPlays) {
@@ -132,7 +145,7 @@ export class ColorFactory {
 
   constructor(image: HTMLImageElement) {
     this.colors = colors.map(color =>
-                             new Anim(image, 0, color * 2, 1, 1))
+                             new Anim(image, 0, color * 2, 2, 2))
   }
 
 
