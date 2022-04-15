@@ -300,7 +300,7 @@ class Slicer extends WithPlays {
 
           Array.from(Array(nb).keys()).map(i =>
                this.add_select_area_rect(
-                 i * width,
+                 select_area_rect.x + i * width,
                  select_area_rect.y,
                  width,
                  ref_on_pan.size.y
@@ -313,9 +313,10 @@ class Slicer extends WithPlays {
 
     }
 
-    this.pan_zoom_scale.scale.x -= this.pan_zoom_scale.scale.x * 0.3 * wheel
-    this.pan_zoom_scale.scale.y -= this.pan_zoom_scale.scale.y * 0.3 * wheel
-
+    if (wheel !== 0) {
+      this.pan_zoom_scale.scale.x -= this.pan_zoom_scale.scale.x * 0.3 * wheel
+      this.pan_zoom_scale.scale.y -= this.pan_zoom_scale.scale.y * 0.3 * wheel
+    }
 
     this.select_area_rects.forEach(_ => _.update(dt, dt0))
   }
