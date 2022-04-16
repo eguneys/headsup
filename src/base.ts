@@ -139,6 +139,14 @@ export abstract class WithPlays extends PlayWithTransform {
 
 }
 
+export abstract class HasPlaysParent extends WithPlays {
+
+  constructor(ctx: Context, parent: Transform, 
+              readonly has_plays: WithPlays) {
+                super(ctx, parent, has_plays.plays)
+              }
+}
+
 export class ColorFactory {
 
   colors: Array<Anim>

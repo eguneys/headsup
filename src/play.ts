@@ -1,6 +1,6 @@
 import { ticks } from './shared'
 import { Rectangle, Quad, Transform, Vec2 } from 'soli2d'
-import { PlayWithTransform, WithPlays, ColorFactory } from './base'
+import { HasPlaysParent, PlayWithTransform, WithPlays, ColorFactory } from './base'
 import { dark, red } from './shared'
 import { MouseDrag } from './mouse'
 import { Config } from './play-config'
@@ -199,7 +199,7 @@ class DragDecay2 {
   constructor(readonly drag: MouseDrag,
               readonly orig: Transform) {
                 this.start = Vec2.make(...drag.start)
-                this.decay = Vec2.zero
+                this.decay = orig.translate.sub(vec_transform_inverse_matrix(this.start, orig._parent))
               }
 
 }
@@ -391,7 +391,7 @@ class Slicer extends WithPlays {
 
 }
 
-class TransformPlusHandle extends WithPlays {
+class TransformPlusHandle extends HasPlaysParent {
 
 
   a_red = this.colors.quad(red, 2)
@@ -411,28 +411,31 @@ class TransformPlusHandle extends WithPlays {
 
     this.tile = Template.clone
     this.tile.quad = a_red
-    this.tile.size = Vec2.make(4, 2)
+    this.tile.size = Vec2.make(2, 2)
     this.tile._set_parent(this.container)
     this.tile.translate = this.handle.translate
   }
 
-  _update(dt: number, dt0: number) {
- 
+  test_drag() {
     let { drag } = this.mouse
 
-    if (drag && drag.button === 0) {
-      let hit = vec_transform_inverse_matrix(Vec2.make(...drag.start), this.tile)
+    if (drag && !drag.move0 && drag.button === 0) {
+      let hit = vec_transform_inverse_matrix(Vec2.make(...drag.start), this.handle)
 
       if (Math.floor(hit.x) === 0 && Math.floor(hit.y) === 0) {
 
         if (!this.drag) {
           this.drag = DragDecay2.make(drag,
-                                      this.tile)
+                                      this.handle)
+          return true
         }
 
       }
     }
+    return false
+  }
 
+  _update(dt: number, dt0: number) {
     if (this.drag) {
       this.tile.x = Math.floor(this.drag.translate.x)
       this.tile.y = Math.floor(this.drag.translate.y)
@@ -492,7 +495,7 @@ class Grouper extends WithPlays {
         return _.children.flatMap(_ => {
           if (_.type === T_QUAD) {
             return _.children.map(_ => {
-              let res = new TransformPlusHandle(this.ctx, this.pan_zoom_scale_handles, this.plays)
+              let res = new TransformPlusHandle(this.ctx, this.pan_zoom_scale_handles, this)
               ._set_data(_)
               .init()
 
@@ -512,6 +515,8 @@ class Grouper extends WithPlays {
   _update(dt: number, dt0: number) {
 
     let { wheel, drag, click } = this.mouse
+
+    let handled = this._handles.slice(0).reverse().some(_ => _.test_drag())
 
     if (drag && drag.button === 1) {
       if (!this.pan_drag) {
