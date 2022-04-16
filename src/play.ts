@@ -5,7 +5,7 @@ import { dark, red } from './shared'
 import { MouseDrag } from './mouse'
 import { Config } from './play-config'
 
-import { T_QN, T_QUAD, scene_import } from './scene-import'
+import { SceneEditor, ImportScene } from './slices'
 
 const Template = new Transform()
 
@@ -391,14 +391,14 @@ class Slicer extends WithPlays {
 
 }
 
-class TransformPlusHandle extends HasPlaysParent {
+class SceneNodeHandle extends HasPlaysParent {
 
 
   a_red = this.colors.quad(red, 2)
 
 
-  get plus() { return this.data as TransformPlus }
-  get handle() { return this.plus.data }
+  get node() { return this.data as SceneNode }
+  get handle() { return this.node.transform }
 
   tile!: Transform
 
@@ -453,9 +453,9 @@ class Grouper extends WithPlays {
 
   select_transform?: SelectTransform
 
-  _scene!: TransformPlus
+  _editor!: SceneEditor
 
-  _handles!: TransformPlusHandles
+  _handles!: Array<SceneNodeHandle>
   
   pan_zoom_scale!: Transform
   pan_zoom_scale_handles!: Transform
@@ -480,36 +480,32 @@ class Grouper extends WithPlays {
     this.pan_zoom_scale_handles = Template.clone
     this.pan_zoom_scale_handles._set_parent(this.pan_zoom_scale)
 
+    let example_scene = {
+      l: [[0, 96, 30, 40]],
+      g: [[[0, 0, 0]]],
+      s: 0
+    }
 
+    this._handles = []
 
+    this._editor = SceneEditor.make(this.image, example_scene)
+    this._editor.scene.transform._set_parent(this.pan_zoom_scale_children)
 
-    let example_scene = [{
-      q: [[0, 96, 30, 40], [0, 80, 6, 6, 100, 100]],
-      c: []
-    }]
+    this.add_scene_handles(this._editor.scene)
+  }
 
-    this._scene = scene_import(this.image, example_scene)
+  add_scene_handles(node: SceneNode) {
+    let res = new SceneNodeHandle(this.ctx, 
+                                  this.pan_zoom_scale, 
+    this)
+    ._set_data(node)
+    .init()
 
-    this._handles = this._scene.children.flatMap(_ => {
-      if (_.type === T_QN) {
-        return _.children.flatMap(_ => {
-          if (_.type === T_QUAD) {
-            return _.children.map(_ => {
-              let res = new TransformPlusHandle(this.ctx, this.pan_zoom_scale_handles, this)
-              ._set_data(_)
-              .init()
+    res.add_after_init()
 
-              res.add_after_init()
-              return res
-            })
-          }
-          return []
-        })
-      }
-      return []
-    })
+    this._handles.push(res)
 
-    this._scene.data._set_parent(this.pan_zoom_scale_children)
+    node.children.forEach(_ => this.add_scene_handles(_))
   }
 
   _update(dt: number, dt0: number) {
