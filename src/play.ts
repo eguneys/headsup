@@ -482,7 +482,7 @@ class Grouper extends WithPlays {
 
     let example_scene = {
       l: [[0, 96, 30, 40]],
-      g: [[[0, 0, 0]]],
+      g: [[[0, 10, 10]]],
       s: 0
     }
 
@@ -491,10 +491,17 @@ class Grouper extends WithPlays {
     this._editor = SceneEditor.make(this.image, example_scene)
     this._editor.scene.transform._set_parent(this.pan_zoom_scale_children)
 
-    this.add_scene_handles(this._editor.scene)
+    this._add_scene_handles(this._editor.scene)
   }
 
-  add_scene_handles(node: SceneNode) {
+
+  add_new_node(ref: GroupRef) {
+    let node = this._editor.groups[ref].clone
+    this._editor.scene.add(node)
+    this._add_scene_handles(node)
+  }
+
+  _add_scene_handles(node: SceneNode) {
     let res = new SceneNodeHandle(this.ctx, 
                                   this.pan_zoom_scale, 
     this)
@@ -505,7 +512,7 @@ class Grouper extends WithPlays {
 
     this._handles.push(res)
 
-    node.children.forEach(_ => this.add_scene_handles(_))
+    node.children.forEach(_ => this._add_scene_handles(_))
   }
 
   _update(dt: number, dt0: number) {

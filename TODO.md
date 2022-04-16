@@ -13,3 +13,6 @@
 - [ ] Slice texture atlas
 - [ ] Group slices into scenes
 - [ ] Compose scenes together
+- [ ] Export scene data
+- [ ] Import scene data
+- [ ] Multi-frame slices animation

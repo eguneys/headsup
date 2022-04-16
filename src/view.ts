@@ -31,24 +31,31 @@ export default function view(ctrl: Ctrl) {
 
 function grouper(ctrl: Ctrl) {
   return h('div.content.grouper', [
-    h('div.side', [
-    groups(ctrl),
-    h('button', {
-        on: {
-          click() {
-            ctrl.add_group()
-            ctrl.redraw()
+    h('div.side-board', [
+      h('div.side', [
+        groups(ctrl),
+        h('button', {
+          on: {
+            click() {
+              ctrl.add_group()
+              ctrl.redraw()
+            }
+          }
+        }, 'Add group')
+      ]),
+      h('div.board', {
+        hook: {
+          insert(vnode: VNode) {
+            ctrl.setGround(ground(ctrl.image, vnode.elm as HTMLElement, { grouper: true }))
           }
         }
-      }, 'Add group')
+      })
     ]),
-    h('div.board', {
-      hook: {
-        insert(vnode: VNode) {
-          ctrl.setGround(ground(ctrl.image, vnode.elm as HTMLElement, { grouper: true }))
-        }
-      }
-    })
+    h('div.info', [
+      h('span', 'Add a slice: '),
+      ...ctrl.slices.map(_ => 
+                         h('button.slice', {}, _.name))
+    ])
   ])
 }
 
