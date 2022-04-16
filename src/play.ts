@@ -1,5 +1,5 @@
 import { ticks } from './shared'
-import { Quad, Transform, Vec2 } from 'soli2d'
+import { Rectangle, Quad, Transform, Vec2 } from 'soli2d'
 import { PlayWithTransform, WithPlays, ColorFactory } from './base'
 import { dark, red } from './shared'
 import { MouseDrag } from './mouse'
@@ -9,12 +9,21 @@ import { T_QN, T_QUAD, scene_import } from './scene-import'
 
 const Template = new Transform()
 
-function vec_transform_inverse(vec: Vec2, transform: Transform) {
-  return vec.sub(transform.translate).div(transform.scale)
+function vec_transform_matrix(vec: Vec2, transform: Transform) {
+  return transform.world.mVec2(vec)
 }
 
-function vec_transform(vec: Vec2, transform: Transform) {
-  return vec.add(transform.translate).mul(transform.scale)
+function vec_transform_inverse_matrix(vec: Vec2, transform: Transform) {
+  return transform.world.inverse.mVec2(vec)
+}
+
+function vec_hit(vec: Vec2, transform: Transform) {
+
+  let { x1, y1, x2, y2 } = Rectangle.unit.transform(transform.world)
+
+  let { x, y } = vec
+
+  return (x1 < x && x < x2 && y1 < y && y < y2)
 }
 
 class SelectAreaRectangle extends WithPlays {
@@ -156,6 +165,42 @@ class GridBackground extends WithPlays {
 
   _update(dt: number, dt0: number) {}
 
+
+}
+
+
+class DragDecay2 {
+  static make = (drag: MouseDrag, orig: Transform) => {
+    return new DragDecay2(drag, orig)
+  }
+
+
+  get translate() {
+    return this.move.add(this.decay)
+  }
+
+  get move() {
+    return vec_transform_inverse_matrix(Vec2.make(...this.drag.move), this.parent)
+  }
+
+  get parent() {
+    return this.orig._parent
+  }
+
+  get drop() {
+    return this.drag.drop
+  }
+
+
+  decay: Vec2
+  start: Vec2
+
+
+  constructor(readonly drag: MouseDrag,
+              readonly orig: Transform) {
+                this.start = Vec2.make(...drag.start)
+                this.decay = Vec2.zero
+              }
 
 }
 
@@ -304,7 +349,7 @@ class Slicer extends WithPlays {
 
     if (click) {
 
-      let click_on_pan = vec_transform_inverse(Vec2.make(...click), this.pan_zoom_scale)
+      let click_on_pan = vec_transform_inverse_matrix(Vec2.make(...click), this.pan_zoom_scale)
 
       let [select_area_rect] = this.select_area_rects
 
@@ -357,6 +402,8 @@ class TransformPlusHandle extends WithPlays {
 
   tile!: Transform
 
+  drag?: DragDecay
+
   _init() {
     this.container = Template.clone
 
@@ -366,7 +413,7 @@ class TransformPlusHandle extends WithPlays {
     this.tile.quad = a_red
     this.tile.size = Vec2.make(4, 2)
     this.tile._set_parent(this.container)
-    this.tile.translate = vec_transform(Vec2.make(0, 0), this.handle)
+    this.tile.translate = this.handle.translate
   }
 
   _update(dt: number, dt0: number) {
@@ -374,11 +421,26 @@ class TransformPlusHandle extends WithPlays {
     let { drag } = this.mouse
 
     if (drag && drag.button === 0) {
-      // TODO better way to transform vectors
-      this.tile.translate.x, vec_transform_inverse(Vec2.make(...drag.start), this.container._parent._parent).x)
+      let hit = vec_transform_inverse_matrix(Vec2.make(...drag.start), this.tile)
+
+      if (Math.floor(hit.x) === 0 && Math.floor(hit.y) === 0) {
+
+        if (!this.drag) {
+          this.drag = DragDecay2.make(drag,
+                                      this.tile)
+        }
+
+      }
     }
 
+    if (this.drag) {
+      this.tile.x = Math.floor(this.drag.translate.x)
+      this.tile.y = Math.floor(this.drag.translate.y)
 
+      if (this.drag.drop) {
+        this.drag = undefined
+      }
+    }
   }
 }
 
