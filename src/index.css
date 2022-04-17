@@ -24,6 +24,7 @@
 
 .grouper {
   flex-flow:column;
+  gap: 1em;
 }
 
 .side-board {

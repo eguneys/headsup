@@ -5,7 +5,7 @@ import { dark, red } from './shared'
 import { MouseDrag } from './mouse'
 import { Config } from './play-config'
 
-import { SceneEditor, ImportScene } from './slices'
+import { SceneEditor, ImportScene } from './scene-model'
 
 const Template = new Transform()
 
@@ -416,6 +416,23 @@ class SceneNodeHandle extends HasPlaysParent {
     this.tile.translate = this.handle.translate
   }
 
+
+  test_click() {
+    let { click } = this.mouse
+
+    if (click) {
+
+      let hit = vec_transform_inverse_matrix(Vec2.make(...click), this.tile)
+
+      if (Math.floor(hit.x) === 0 && Math.floor(hit.y) === 0) {
+        this.has_plays.remove_handle(this)
+        return true
+      }
+
+    }
+    return false
+  }
+
   test_drag() {
     let { drag } = this.mouse
 
@@ -461,6 +478,10 @@ class Grouper extends WithPlays {
   pan_zoom_scale_handles!: Transform
   pan_zoom_scale_children!: Transform
 
+  get export_scene() {
+    return this._editor.export_scene
+  }
+
   _init() {
     this.container = Template.clone
 
@@ -480,10 +501,17 @@ class Grouper extends WithPlays {
     this.pan_zoom_scale_handles = Template.clone
     this.pan_zoom_scale_handles._set_parent(this.pan_zoom_scale)
 
-    let example_scene = {
-      l: [[0, 96, 30, 40]],
-      g: [[[0, 10, 10]]],
-      s: 0
+
+    this.import_scene(this.data as ImportScene)
+  }
+
+  import_scene(example_scene: ImportScene) {
+    if (this._editor) {
+      this._editor.scene.transform._remove()
+    }
+
+    if (this._handles) {
+      this._handles.forEach(_ => _.remove())
     }
 
     this._handles = []
@@ -494,9 +522,19 @@ class Grouper extends WithPlays {
     this._add_scene_handles(this._editor.scene)
   }
 
+  remove_handle(handle: SceneHandle) {
+    this._handles.splice(this._handles.indexOf(handle), 1)
+    handle.remove()
+    handle.node.remove()
+  }
 
   add_new_node(ref: GroupRef) {
-    let node = this._editor.groups[ref].clone
+    let node
+    if (ref < this._editor.slices.length) {
+      node = this._editor.slices[ref].clone
+    } else {
+      node = this._editor.groups[ref - this._editor.slices.length].clone
+    }
     this._editor.scene.add(node)
     this._add_scene_handles(node)
   }
@@ -519,7 +557,9 @@ class Grouper extends WithPlays {
 
     let { wheel, drag, click } = this.mouse
 
-    let handled = this._handles.slice(0).reverse().some(_ => _.test_drag())
+    let handles_reverse = this._handles.slice(0).reverse()
+    let handled = handles_reverse.some(_ => _.test_drag())
+    handles_reverse.some(_ => _.test_click())
 
     if (drag && drag.button === 1) {
       if (!this.pan_drag) {
@@ -565,6 +605,7 @@ export default class AllPlays extends PlayWithTransform {
   colors = new ColorFactory(this.image)
 
   slicer!: Slicer
+  grouper?: Grouper
 
   get config(): Config {
     return this.data as Config
@@ -583,9 +624,12 @@ export default class AllPlays extends PlayWithTransform {
 
     this.slicer = new Slicer(this.ctx, this.container, this).init()
 
-    this.grouper = new Grouper(this.ctx, this.container, this).init()
+    if (this.config.import_scene) {
 
-    if (this.config.grouper) {
+      this.grouper = new Grouper(this.ctx, this.container, this)
+      ._set_data(this.config.import_scene)
+      .init()
+
       this.grouper.add_after_init()
     } else {
       this.slicer.add_after_init()
@@ -594,6 +638,6 @@ export default class AllPlays extends PlayWithTransform {
 
   _update(dt: number, dt0: number) {
     this.slicer.update(dt, dt0)
-    this.grouper.update(dt, dt0)
+    this.grouper?.update(dt, dt0)
   }
 }

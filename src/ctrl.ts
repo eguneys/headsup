@@ -14,10 +14,21 @@ export type Slice = {
 }
 
 export type Group = {
-  name: string
+  name: string,
+  group: Array<ImportGroup>
 }
 
 export type Tab = 1 | 2
+
+
+function extract_current_group_from_scene(scene: SceneImport) {
+  let index = scene.s - scene.l.length
+  let group = scene.g[index]
+
+  return group
+}
+
+
 
 export default class Ctrl {
 
@@ -42,6 +53,29 @@ export default class Ctrl {
     this.option_tab(v)
   }
 
+  get import_scene(): ImportScene {
+
+    let l = this.slices.map(_ => {
+      let frame = _.frames[0]
+      return [frame.x, frame.y, frame.w, frame.h]
+    })
+
+    let g = []
+
+    if (this.current_group) {
+      g.push(this.current_group.group)
+    } else {
+      g.push([])
+    }
+
+    let s = g.length - 1
+
+    return {
+      l, g, s
+    }
+  }
+
+  current_group?: Group
 
   image!: HTMLImageElement
 
@@ -79,9 +113,15 @@ export default class Ctrl {
     return this
   }
 
+  grouper_add_slice(slice: Slice) {
+    this.ground.grouper.add_new_node(
+      this.slices.indexOf(slice))
+  }
+
   add_group() {
     this.groups.push({
-      name: this.newGroupName
+      name: this.newGroupName,
+      group: []
     })
     this._save_groups()
   }
@@ -91,10 +131,14 @@ export default class Ctrl {
   }
 
   select_group(group: Group) {
-
+    this.current_group = group
+    this.ground.grouper.import_scene(this.import_scene)
   }
 
   save_group(group: Group) {
+
+    group.group = extract_current_group_from_scene(this.ground.grouper.export_scene)
+
     this._save_groups()
   }
 

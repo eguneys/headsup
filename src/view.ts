@@ -46,7 +46,9 @@ function grouper(ctrl: Ctrl) {
       h('div.board', {
         hook: {
           insert(vnode: VNode) {
-            ctrl.setGround(ground(ctrl.image, vnode.elm as HTMLElement, { grouper: true }))
+            let import_scene = ctrl.import_scene
+            ctrl.setGround(ground(ctrl.image, vnode.elm as HTMLElement, 
+                                  { import_scene }))
           }
         }
       })
@@ -54,7 +56,14 @@ function grouper(ctrl: Ctrl) {
     h('div.info', [
       h('span', 'Add a slice: '),
       ...ctrl.slices.map(_ => 
-                         h('button.slice', {}, _.name))
+                         h('button.slice', {
+                         
+                           on: {
+                             click() {
+                               ctrl.grouper_add_slice(_)
+                             }
+                           }
+                         }, _.name))
     ])
   ])
 }
