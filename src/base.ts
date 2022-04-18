@@ -109,9 +109,10 @@ export abstract class PlayWithTransform extends Play {
     super(ctx)
   }
 
-  add_after_init() {
+  add_after_init(): this {
     this.container._set_parent(this.parent)
     this.on_attached()
+    return this
   }
 
   remove() {
@@ -125,6 +126,7 @@ export abstract class PlayWithTransform extends Play {
 
 export abstract class WithPlays extends PlayWithTransform {
 
+  _group: Array<HasPlaysParent>
 
   get clone() {
     let res = new this.constructor(this.ctx, this.parent, this.plays)._set_data(this.data).init()
@@ -137,13 +139,33 @@ export abstract class WithPlays extends PlayWithTransform {
     super(plays.ctx, parent)
   }
 
+
+  init() {
+    this._group = []
+    return super.init()
+  }
+
+
+  update(dt: number, dt0: number) {
+    this._group.forEach(_ => _.update(dt, dt0))
+    super.update(dt, dt0)
+  }
+
+
+  // dummy
+  _update(dt: number, dt0: number) {}
 }
 
 export abstract class HasPlaysParent extends WithPlays {
 
   constructor(readonly has_plays: WithPlays, parent?: Transform = has_plays.container) {
-                super(ctx, parent, has_plays.plays)
+                super(has_plays, parent)
               }
+
+  add_after_init() {
+    this.has_plays._group.push(this)
+    return super.add_after_init()
+  }
 }
 
 export class ColorFactory {
