@@ -5,7 +5,7 @@ import AllPlays from './play'
 import { Config } from './play-config'
 
 export default function ground(image: HTMLImageElement, element: HTMLElement, config: Config = {}) {
-    let [_render, root, $canvas] = Soli2d(element, image, 1920, 1080)
+    let [_render, root, $canvas] = Soli2d(element, image, 320, 180)
 
     let input = new Input()
     let mouse = new Mouse($canvas).init()
