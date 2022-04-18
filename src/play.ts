@@ -64,6 +64,23 @@ class DragDecay2 {
 export type Handler = () => void;
 
 
+class HeadsUp extends WithPlays {
+
+
+  _init() {
+
+    this.container = Template.clone
+
+
+
+  }
+
+  _update(dt: number, dt0: number) {
+  }
+
+}
+
+
 export default class AllPlays extends PlayWithTransform {
 
   colors = new ColorFactory(this.image)
@@ -72,8 +89,17 @@ export default class AllPlays extends PlayWithTransform {
     return this.data as Config
   }
 
+  headsup!: HeadsUp
+
   _init() {
     this.container = Template.clone
+
+    this.headsup = new HeadsUp(this)
+    ._set_data({})
+    .init()
+
+
+    this.headsup.add_after_init()
   }
 
   _update(dt: number, dt0: number) {

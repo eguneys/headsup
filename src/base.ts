@@ -133,16 +133,15 @@ export abstract class WithPlays extends PlayWithTransform {
 
   get colors() { return this.plays.colors }
 
-  constructor(ctx: Context, parent: Transform, readonly plays: AllPlays) {
-    super(ctx, parent)
+  constructor(readonly plays: AllPlays, parent?: Transform = plays.container) {
+    super(plays.ctx, parent)
   }
 
 }
 
 export abstract class HasPlaysParent extends WithPlays {
 
-  constructor(ctx: Context, parent: Transform, 
-              readonly has_plays: WithPlays) {
+  constructor(readonly has_plays: WithPlays, parent?: Transform = has_plays.container) {
                 super(ctx, parent, has_plays.plays)
               }
 }
