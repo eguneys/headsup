@@ -5,8 +5,8 @@ import { dark, red } from './shared'
 import { MouseDrag } from './mouse'
 import { Config } from './play-config'
 
-import { Cards as OCards, Card as OCard } from './poker/types'
-import { uci_cards } from './poker/format/uci'
+import { is_hidden, HeadsUp as OHeadsUp, Cards as OCards, PovHands as OHands, Card as OCard } from './poker/types'
+import { uci_headsup } from './poker/format/uci'
 
 
 const Template = new Transform()
@@ -170,7 +170,7 @@ class Card extends HasPlaysParent {
     this.t_scale.update(dt, dt0)
     super.scale = this.t_scale.value
 
-    if (this._has_reached_reveal) {
+    if (this._has_reached_reveal && !is_hidden(this._has_reached_reveal)) {
       if (this.t_x.has_reached && this.t_y.has_reached) {
         if (!this.t_reveal) {
           this.t_reveal = new TweenVal(1, 5, ticks.half, TweenVal.quad_in_out)
@@ -276,12 +276,94 @@ class Cards extends HasPlaysParent {
   }
 }
 
+
+class HandCards extends HasPlaysParent {
+
+  get deck_card() {
+    let res =  new Card(this)
+    .init()
+    .add_after_init()
+
+    res.x = 0
+    res.y = 0
+
+    return res
+  }
+
+
+  _op?: [Card, Card]
+  _me?: [Card, Card]
+
+  me_pos = Vec2.make(80, 120)
+  op_pos = Vec2.make(80, 10)
+
+  set op(op?: [OCard, OCard]) {
+    this._op?.forEach(_ => _.remove())
+    this._op = op?.map(_ => this.deck_card)
+
+    let { op_pos } = this
+
+    this._op?.map((_, i) => {
+      _.x = op_pos.x + i * 32
+      _.y = op_pos.y + 10
+      _.has_reached_reveal = op[i]
+    })
+  }
+
+
+  set me(me?: [OCard, OCard]) {
+    this._me?.forEach(_ => _.remove())
+    this._me = me?.map(_ => this.deck_card)
+
+    let { me_pos } = this
+
+    this._me?.map((_, i) => {
+      _.x = me_pos.x + i * 32
+      _.y = me_pos.y + 10
+      _.has_reached_reveal = me[i]
+    })
+  }
+
+  _hands?: OHands
+
+  set hands(hands?: OHands) {
+    let { _hands } = this
+
+    if (!_hands) {
+      this.op = hands?.op
+      this.me = hands?.me
+    } else {
+      if (!_hands.op || !hands?.op) {
+        this.op = hands?.op
+      }
+      if (!_hands.me || !hands?.me) {
+        this.me = hands?.me
+      }
+    }
+    this._hands = hands
+  }
+
+  _init() {
+    this.container = Template.clone
+  }
+}
+
 class HeadsUp extends WithPlays {
 
 
-  get ocards() { return this.data as OCards }
+  get oheadsup() { return this.data as OHeadsUp }
+
+  get omiddle() { return this.oheadsup.middle }
+  get ohands() { return this.oheadsup.hands }
+
+
+  set oheadsup(headsup: OHeadsUp) {
+    this.cards.cards = headsup.middle
+    this.hand_cards.hands = headsup.hands
+  }
 
   cards: Cards
+  hand_cards: HandCards
 
   _init() {
 
@@ -291,12 +373,12 @@ class HeadsUp extends WithPlays {
     .init()
     .add_after_init()
 
-    this.cards.cards = this.ocards
-  }
+    this.hand_cards = new HandCards(this)
+    .init()
+    .add_after_init()
 
-
-  apply_diff(cards: OCards) {
-    this.cards.cards = cards
+    this.cards.cards = this.omiddle
+    this.hand_cards.hands = this.ohands
   }
 }
 
@@ -316,7 +398,7 @@ export default class AllPlays extends PlayWithTransform {
     this.container = Template.clone
 
     this.headsup = new HeadsUp(this)
-    ._set_data(uci_cards(this.config.fen))
+    ._set_data(uci_headsup(this.config.fen))
     .init()
 
     this.headsup.add_after_init()
@@ -324,7 +406,7 @@ export default class AllPlays extends PlayWithTransform {
 
   apply_diff(config: Config) {
     this._set_data(config)
-    this.headsup.apply_diff(uci_cards(this.config.fen))
+    this.headsup.oheadsup = uci_headsup(this.config.fen)
   }
 
   _update(dt: number, dt0: number) {

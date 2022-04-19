@@ -1,4 +1,9 @@
+## CHANGES
 
+### 2022-04-20
+
+- [x] Middle cards
+- [x] Player hand
 
 
 ## TODO
@@ -6,6 +11,8 @@
 ### 2022-04-20
 
 - [ ] Remove cards animation
+- [ ] Suit Rank on cards
+- [ ] Background Art
 
 ### 2022-04-19
 
@@ -13,8 +20,8 @@
 
 ### 2022-04-18
 
-- [ ] Middle cards
-- [ ] Player hand
+- [x] Middle cards
+- [x] Player hand
 - [ ] Player avatar
 - [ ] Player stack
 - [ ] Player timer
