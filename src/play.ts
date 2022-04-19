@@ -5,7 +5,8 @@ import { dark, red } from './shared'
 import { MouseDrag } from './mouse'
 import { Config } from './play-config'
 
-import { Middle as OMiddle, Card as OCard } from './gpoker'
+import { Cards as OCards, Card as OCard } from './poker/types'
+import { uci_cards } from './poker/format/uci'
 
 
 const Template = new Transform()
@@ -113,38 +114,50 @@ export class TweenVal {
 
 }
 
-
-
 class Card extends HasPlaysParent {
 
+  a_back = this.anim(0, 96, 30, 40)
   a_front = this.anim(0, 96, 30, 40)
+  a_reveal = this.anim(90, 96, 30, 40)
 
-  t_x: TweenVal = new TweenVal(0, 0, ticks.half, TweenVal.quad_in_out)
-  t_y: TweenVal = new TweenVal(0, 0, ticks.half, TweenVal.quad_in_out)
+  t_x!: TweenVal
+  t_y!: TweenVal
+
+  t_scale: TweenVal = new TweenVal(0.8, 1, ticks.half, TweenVal.quad_in_out)
 
   set x(value: number) {
-    this.t_x = this.t_x.new_b(value)
+    if (!this.t_x) {
+      this.t_x = new TweenVal(value, value, ticks.half, TweenVal.quad_in_out)
+    } else {
+      this.t_x = this.t_x.new_b(value)
+    }
   }
 
   set y(value: number) {
-    this.t_y = this.t_y.new_b(value)
+    if (!this.t_y) {
+      this.t_y = new TweenVal(value, value, ticks.half, TweenVal.quad_in_out)
+    } else {
+      this.t_y = this.t_y.new_b(value)
+    }
   }
+
+  t_reveal!: TweenVal
+
+  _has_reached_reveal: OCard
+  set has_reached_reveal(card: OCard) {
+    this._has_reached_reveal = card
+  }
+
+  _bg: Transform
 
   _init() {
-
     this.container = Template.clone
 
-    let { a_front } = this
+    let { a_back, a_front } = this
+    a_back.frame = 1
 
-    let front = a_front.template
-    front._set_parent(this.container)
-  }
-
-  move_to(parent: WithPlays) {
-    return new Card(parent)
-    ._set_data(this.data)
-    .init()
-    .add_after_init()
+    this._bg = a_back.template
+    this._bg._set_parent(this.container)
   }
 
   _update(dt: number, dt0: number) {
@@ -153,75 +166,137 @@ class Card extends HasPlaysParent {
 
     super.x = this.t_x.value
     super.y = this.t_y.value
+
+    this.t_scale.update(dt, dt0)
+    super.scale = this.t_scale.value
+
+    if (this._has_reached_reveal) {
+      if (this.t_x.has_reached && this.t_y.has_reached) {
+        if (!this.t_reveal) {
+          this.t_reveal = new TweenVal(1, 5, ticks.half, TweenVal.quad_in_out)
+        } 
+      }
+    }
+
+
+    let { a_reveal } = this
+    if (this.t_reveal) {
+      this.t_reveal.update(dt, dt0)
+      if (this.t_reveal.has_reached) {
+        this._has_reached_reveal = undefined
+        this.t_reveal = undefined
+      } else {
+        a_reveal.frame = Math.floor(this.t_reveal.value)
+        this._bg.quad = a_reveal.quad
+      }
+    }
   }
 }
 
-type MiddleCards = {
-  flop?: [Card, Card, Card],
-  turn?: Card,
-  river?: Card
-}
+class Cards extends HasPlaysParent {
 
-class Middle extends HasPlaysParent {
+  get deck_card() {
+    let res =  new Card(this)
+    .init()
+    .add_after_init()
 
-  get cards() { return this.data as MiddleCards }
+    res.x = 0
+    res.y = 0
 
-  flop?: [Card, Card, Card]
-  turn?: Card
-  river?: Card
+    return res
+  }
+
+  _flop?: [Card, Card, Card]
+  _turn?: Card
+  _river?: Card
+
+  get flop_y() { 
+    return 70
+  }
+
+  get flop_x() {
+    return 20
+  }
+
+  set flop(flop?: [OCard, OCard, OCard]) {
+    this._flop?.forEach(_ => _.remove())
+    this._flop = flop?.map(_ => this.deck_card)
+    this._flop?.map((_, i) => {
+      _.x = this.flop_x + i * 32
+      _.y = this.flop_y
+      _.has_reached_reveal = _
+    })
+  }
+
+  set turn(turn?: OCard) {
+    this._turn?.remove()
+    if (turn) {
+      this._turn = this.deck_card
+      this._turn.x = this.flop_x + 3 * 32 + 1
+      this._turn.y = this.flop_y
+      this._turn.has_reached_reveal = turn
+    }
+  }
+
+  set river(river?: OCard) {
+    this._river?.remove()
+    if (river) {
+      this._river = this.deck_card
+      this._river.x = this.flop_x + 4 * 32 + 1
+      this._river.y = this.flop_y
+      this._river.has_reached_reveal = river
+    }
+  }
+
+  _cards: OCards
+  set cards(cards: OCards) {
+    let { _cards } = this
+
+    if (!_cards) {
+      this.flop = cards.flop
+      this.turn = cards.turn
+      this.river = cards.river
+    } else {
+      if (!_cards.flop || !cards.flop) {
+        this.flop = cards.flop
+      }
+      if (!_cards.turn || !cards.turn) {
+        this.turn = cards.turn
+      }
+      if (!_cards.river || !cards.river) {
+        this.river = cards.river
+      }
+    }
+
+    this._cards = cards
+  }
 
   _init() {
     this.container = Template.clone
-
-    let { flop, turn, river } = this.cards
-
-    this.flop = flop?.map(_ => _.move_to(this))
-    this.turn = turn?.move_to(this)
-    this.river = river?.move_to(this)
-
-    if (this.flop) {
-      this.flop.map((_, i) => _.x = i * 32)
-    }
-    if (this.turn) {
-      this.turn.x = 3 * 32 + 1
-    }
-
-    if (this.river) {
-      this.river.x = 4 * 32 + 1
-    }
   }
 }
 
 class HeadsUp extends WithPlays {
 
 
-  middle: Middle
+  get ocards() { return this.data as OCards }
+
+  cards: Cards
 
   _init() {
 
     this.container = Template.clone
 
-
-    let flop = [
-      new Card(this).init(),
-      new Card(this).init(),
-      new Card(this).init(),
-    ]
-    let turn = new Card(this).init()
-    let river = new Card(this).init()
-
-
-    this.middle = new Middle(this)
-    ._set_data({
-      flop,
-      turn,
-      river
-    })
+    this.cards = new Cards(this)
     .init()
     .add_after_init()
-    this.middle.x = 20
-    this.middle.y = 70
 
+    this.cards.cards = this.ocards
+  }
+
+
+  apply_diff(cards: OCards) {
+    this.cards.cards = cards
   }
 }
 
@@ -229,6 +304,7 @@ class HeadsUp extends WithPlays {
 export default class AllPlays extends PlayWithTransform {
 
   colors = new ColorFactory(this.image)
+
 
   get config(): Config {
     return this.data as Config
@@ -240,11 +316,15 @@ export default class AllPlays extends PlayWithTransform {
     this.container = Template.clone
 
     this.headsup = new HeadsUp(this)
-    ._set_data({})
+    ._set_data(uci_cards(this.config.fen))
     .init()
 
-
     this.headsup.add_after_init()
+  }
+
+  apply_diff(config: Config) {
+    this._set_data(config)
+    this.headsup.apply_diff(uci_cards(this.config.fen))
   }
 
   _update(dt: number, dt0: number) {

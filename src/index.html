@@ -18,13 +18,40 @@ body {
 #app canvas {
   width: min(100vw, calc(100vh * 16/9));
 }
+
+.controls {
+  display: flex;
+}
+
+.controls button {
+  padding: 0.5em;
+}
    </style>
   </head>
   <body>
     <div id='app'></div>
+    <div class='controls'>
+      <button id='get'>Get</button>
+      <button id='flop'>Deal Flop</button>
+      <button id='turn'>Deal Turn</button>
+      <button id='river'>Deal River</button>
+      <button id='collect'>Collect</button>
+    </div>
     <script>
+
+      function click(name, fn) { document.getElementById(name).addEventListener('click', fn) }
+
+      function init(api) {
+              click('get', () => api.set({ fen: '2c2d2h', fen0: '2c2d2h' }))
+              click('flop', () => api.set({ fen: 'ThJdKc', fen0: '' }))
+              click('turn', () => api.set({ fen: 'ThJdKcAs', fen0: 'ThJdKc' }))
+              click('river', () => api.set({ fen: 'ThJdKcAsAh', fen0: 'ThJdKcAs' }))
+              click('collect', () => api.set({ fen: '', fen0: 'ThJdKcAsAh' }))
+            }
+
+
       document.addEventListener('DOMContentLoaded', () => {
-        Space(document.getElementById('app'))
+              Space(document.getElementById('app'), { fen: '' }).then(init)
       })
     </script>
   </body>
