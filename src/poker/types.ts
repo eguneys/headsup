@@ -25,12 +25,38 @@ export type Middle = {
   river?: Card
 }
 
-export type PovHands = {
-  op: [Card, Card],
-  me: [Card, Card]
+export type HeadsUpPov<A> = {
+  me: A,
+  op: A
 }
 
+export function headsup_pov<A>(values: [A, A], me_index: number) {
+  let me = values[me_index],
+    op = values[(me_index + 1) % 2]
+
+  return {
+    me,
+    op
+  }
+}
+
+export function is_headsup_index(_: any): _ is HeadsUpIndex {
+  return _ === 1 || _ === 2
+}
+
+export type Hand = [Card, Card]
+
+export type Stack = number
+
+export type HeadsUpIndex = 1 | 2
+
+export type Timestamp = number
+
 export type HeadsUp = {
+  pov_index: HeadsUpIndex,
+  pov_stacks: HeadsUpPov<Stack | undefined>,
+  turn_index?: HeadsUpIndex,
+  turn_time?: Timestamp,
+  pov_hands?: HeadsUpPov<Hand>
   middle: Middle,
-  hands?: PovHands
 }

@@ -1,28 +1,72 @@
-import { card } from '../types'
+import { card, is_headsup_index, headsup_pov } from '../types'
 
 export const suits = ['h', 'd', 's', 'c']
 export const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', '?']
 
 
 export function uci_headsup(uci: string) {
-  let [_middle, _me, _op] = uci.split(' ')
+
+  let [_pov_index, _stacks, _turn_index, _start_timestamp, _hands, _middle] = uci.split(' ')
 
 
-  let hands
-  let middle = uci_middle(_middle)
+  let pov_index = uci_hu_index(_pov_index)
+  if (!pov_index) {
+    return
+  }
+  let pov_stacks = headsup_pov(
+    _stacks.split('/').map(uci_stack),
+    pov_index)
 
-  if (_op) {
-    hands = {
-      op: uci_hand(_op),
-      me: uci_hand(_me)
+  if (pov_index) {
+
+    let turn_index = uci_hu_index(_turn_index)
+
+    if (turn_index) {
+
+      let turn_time = parseInt(_start_timestamp)
+      let pov_hands = headsup_pov(
+        _hands.split('/')
+        .map(uci_hand)
+        .filter(Boolean), 
+        pov_index)
+
+      let middle = uci_middle(_middle)
+
+      if (turn_time && pov_hands.length === 2 && middle) {
+
+        return {
+          pov_index,
+          pov_stacks,
+          turn_index,
+          turn_time,
+          pov_hands,
+          middle
+        }
+      }
+    }
+
+    return {
+      pov_index,
+      pov_stacks
     }
   }
 
-  return {
-    hands,
-    middle
-  }
+}
 
+export function uci_stack(uci: string) {
+  let res = parseInt(uci)
+  if (res) {
+    return res
+  }
+}
+
+const hu_indexes = ['1', '2']
+export function uci_hu_index(uci: string) {
+  let res = hu_indexes.indexOf(uci) + 1
+
+  if (is_headsup_index(res)) {
+    return res
+  }
 }
 
 export function uci_card(uci: string) {

@@ -41,6 +41,8 @@ export default class Mouse {
   _drag?: MouseDrag
   _drop0?: MouseDrag
 
+  _hover?: NumberPair
+
   _bounds: ClientRect
 
 
@@ -67,6 +69,12 @@ export default class Mouse {
     }
   }
 
+  get hover() {
+    if (!this._drag) {
+      return this._hover
+    }
+  }
+
   get drag_delta() {
     if (!!this._drag?.move) {
 
@@ -83,8 +91,8 @@ export default class Mouse {
 
     let { bounds } = this
 
-    let scaleX = 1920 / bounds.width,
-      scaleY = 1080 / bounds.height
+    let scaleX = 320 / bounds.width,
+      scaleY = 180 / bounds.height
 
     if (res) {
       res[0] -= bounds.left
@@ -124,6 +132,8 @@ export default class Mouse {
     $canvas.addEventListener('mousemove', ev => {
       if (this._drag) {
         this._drag.r_move = this.eventPosition(ev)
+      } else {
+        this._hover = this.eventPosition(ev)
       }
     })
 

@@ -6,7 +6,8 @@ import { MouseDrag } from './mouse'
 import { Config } from './config'
 
 import { is_hidden, HeadsUp as OHeadsUp, Cards as OCards, PovHands as OHands, Card as OCard } from './poker/types'
-import { PlayerConfig } from './types'
+
+import { HeadsUpPov as Pov, headsup_pov } from './poker/types'
 
 
 const Template = new Transform()
@@ -18,16 +19,6 @@ function vec_transform_matrix(vec: Vec2, transform: Transform) {
 function vec_transform_inverse_matrix(vec: Vec2, transform: Transform) {
   return transform.world.inverse.mVec2(vec)
 }
-
-function vec_hit(vec: Vec2, transform: Transform) {
-
-  let { x1, y1, x2, y2 } = Rectangle.unit.transform(transform.world)
-
-  let { x, y } = vec
-
-  return (x1 < x && x < x2 && y1 < y && y < y2)
-}
-
 
 class DragDecay {
   static make = (drag: MouseDrag, orig: Transform) => {
@@ -349,8 +340,9 @@ class HandCards extends HasPlaysParent {
 }
 
 
-class Player extends HasPlaysParent {
+class Seat extends HasPlaysParent {
 
+  a_seat_bg = this.anim(0, 144, 33, 32)
 
   a_bg = this.anim(480, 16, 29, 39)
   a_timer_bg = this.anim(464, 16, 6, 31)
@@ -401,15 +393,52 @@ class Player extends HasPlaysParent {
     return this._i_left?.value
   }
 
+  t_empty: Transform
+  t_full: Transform
+
+  t_empty_bg: Transform
+
+  _avatar?: string
+
+  _i_sit_anim: TweenVal = new TweenVal(0, 0, ticks.sixth, TweenVal.quad_in_out)
+
+  set avatar(avatar: string) {
+    if (!this._avatar && avatar) {
+      this.t_empty._remove()
+    } else if (this._avatar && !avatar) {
+      this.t_full._remove()
+    }
+
+    this._avatar = avatar
+
+    if (this._avatar) {
+      this.t_full._set_parent(this.container)
+    } else {
+      this.t_empty._set_parent(this.container)
+    }
+  }
+
+  get avatar() {
+    return this._avatar
+  }
 
   _init() {
 
     this.container = Template.clone
 
+    this.t_full = Template.clone
+    this.t_empty = Template.clone
+
+
+    let { a_seat_bg } = this
+
+    this.t_empty_bg = a_seat_bg.template
+    this.t_empty_bg._set_parent(this.t_empty)
+
     let { a_bg, a_timer_bg } = this
 
     let bg = a_bg.template
-    bg._set_parent(this.container)
+    bg._set_parent(this.t_full)
 
     this.t_timer = Template.clone
 
@@ -431,58 +460,80 @@ class Player extends HasPlaysParent {
 
 
   _update(dt: number, dt0: number) {
+
+    if (!this.avatar) {
+
+      let { hover, click } = this.mouse
+
+      if (hover) {
+        let hit =  vec_transform_inverse_matrix(Vec2.make(...hover), this.t_empty._children[0])
+        if (Math.floor(hit.x) === 0 && Math.floor(hit.y) === 0) {
+          if (this._i_sit_anim.i === 1) {
+            this._i_sit_anim = this._i_sit_anim.new_b(this._i_sit_anim.value === 0 ? 2.999 : 0)
+          }
+        }
+      }
+
+      if (click) {
+        let hit =  vec_transform_inverse_matrix(Vec2.make(...click), this.t_empty._children[0])
+        if (Math.floor(hit.x) === 0 && Math.floor(hit.y) === 0) {
+          this.plays.on_sit()
+        }
+      }
+    }
+
+
+    this._i_sit_anim.update(dt, dt0)
+
     this._i_left?.update(dt, dt0)
 
     this.t_fg.quad = this.bar_color
     this.t_fg.y = 35-this.bar_height
     this.t_fg.size.y = this.bar_height
+
+    let { a_seat_bg } = this
+
+    a_seat_bg.frame = Math.floor(this._i_sit_anim.value)
+    this.t_empty_bg.quad = a_seat_bg.quad
   }
 }
 
+class Stack extends HasPlaysParent {
 
-class HeadsUp extends WithPlays {
-
-  get state() { return this.data as State }
-
-  get oheadsup() { return this.state.headsup }
-
-  get omiddle() { return this.oheadsup.middle }
-  get ohands() { return this.oheadsup.hands }
-  get me() { return this.state.me }
-  get op() { return this.state.op }
-
-
-  set oheadsup(headsup: OHeadsUp) {
-    this.middle.cards = headsup.middle
-    this.hand_cards.hands = headsup.hands
-  }
-
-  set me(me: PlayerConfig) {
-    this._me.start = me.start
-  }
-
-
-  set op(op: PlayerConfig) {
-    this._op.start = op.start
-  }
-
-  middle: Middle
-  hand_cards: HandCards
-
-  _op: Player
-  _me: Player
+  a_bg = this.anim(50, 16, 50, 13)
 
   _init() {
 
     this.container = Template.clone
 
-    this._op = new Player(this)
-    .init()
-    .add_after_init()
+    let { a_bg } = this
 
-    this._me = new Player(this)
-    .init()
-    .add_after_init()
+    let bg = a_bg.template
+    bg._set_parent(this.container)
+  }
+
+
+}
+
+class HeadsUp extends WithPlays {
+
+  get state() { return this.data as State }
+
+  get headsup() { return this.state.headsup }
+
+  get pov_index() { return this.headsup.pov_index }
+  get ostacks() { return this.headsup.pov_stacks }
+
+  get omiddle() { return this.headsup.middle }
+
+  middle: Middle
+  hand_cards: HandCards
+  stacks: Pov<Stack>
+  seats: Pov<Seat>
+
+  _init() {
+
+    this.container = Template.clone
 
     this.middle = new Middle(this)
     .init()
@@ -492,15 +543,27 @@ class HeadsUp extends WithPlays {
     .init()
     .add_after_init()
 
-    this._op.x = 120
-    this._op.y = 10
-    this._me.x = 140
-    this._me.y = 130
+    this.seats = headsup_pov([
+      new Seat(this)
+      .init()
+      .add_after_init(),
+      new Seat(this)
+      .init()
+      .add_after_init()
+    ], this.pov_index)
 
-    this.middle.cards = this.omiddle
-    this.hand_cards.hands = this.ohands
-    this.me = this.me
-    this.op = this.op
+    this.seats.me.x = 80
+    this.seats.me.y = 130
+    this.seats.op.x = 80
+    this.seats.op.y = 10
+
+    this.seats.me.avatar = this.ostacks.me
+    this.seats.op.avatar = this.ostacks.op
+
+
+    this.middle.flop = this.omiddle.flop
+    this.middle.turn = this.omiddle.turn
+    this.middle.river = this.omiddle.river
   }
 }
 
@@ -512,6 +575,10 @@ export default class AllPlays extends PlayWithTransform {
 
   get state(): State {
     return this.data as State
+  }
+
+  on_sit() {
+    console.log('sit')
   }
 
   headsup!: HeadsUp
@@ -529,8 +596,6 @@ export default class AllPlays extends PlayWithTransform {
   apply_diff(state: State) {
     this._set_data(state)
     this.headsup.oheadsup = this.state.headsup
-    this.headsup.me = this.state.me
-    this.headsup.op = this.state.op
   }
 
   _update(dt: number, dt0: number) {

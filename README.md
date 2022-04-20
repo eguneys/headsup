@@ -1,3 +1,11 @@
+## README
+
+Fen Notation for headsup play
+
+`pov_index stack1/stack2 turn start_timestamp hand1/hand2 middle_cards`
+
+
+
 ## NOTES
 
 ### 2022-04-20
@@ -29,7 +37,6 @@
 
 - [x] Middle cards
 - [x] Player hand
-- [ ] Player avatar
 - [ ] Player stack
 - [x] Player timer
 - [ ] Action buttons
@@ -41,3 +48,4 @@
 - [ ] Stack update
 - [ ] Empty seats
 - [ ] Deal, chips, action animations
+- [ ] Player avatar

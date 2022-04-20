@@ -2,31 +2,23 @@ import { uci_headsup } from './poker/format/uci'
 
 export type Fen = string
 
-export type PlayerConfig = {
-  left?: number
-}
-
 export type Config = {
   fen?: Fen,
   fen0?: Fen,
-  op?: PlayerConfig,
-  me?: PlayerConfig
 }
 
 export type State = {
   fen: Fen,
   fen0: Fen,
   headsup: HeadsUp,
-  op: PlayerConfig,
-  me: PlayerConfig
 }
 
+export const initial_fen = '1 -/-'
+
 export const defaults = () => ({
-  fen: '',
-  fen0: '',
-  headsup: uci_headsup(''),
-  op: {},
-  me: {}
+  fen: initial_fen,
+  fen0: initial_fen,
+  headsup: uci_headsup(initial_fen)
 })
 
 export function configure(state: State, config: Config): void {

@@ -159,7 +159,7 @@ export abstract class WithPlays extends PlayWithTransform {
 export abstract class HasPlaysParent extends WithPlays {
 
   constructor(readonly has_plays: WithPlays, parent?: Transform = has_plays.container) {
-                super(has_plays, parent)
+                super(has_plays.plays, parent)
               }
 
   add_after_init() {

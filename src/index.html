@@ -49,22 +49,46 @@ body {
 
       function click(name, fn) { document.getElementById(name).addEventListener('click', fn) }
 
-      function init(api) {
-              click('get', () => api.set({ fen: '2c2d2h', fen0: '2c2d2h' }))
-              click('flop', () => api.set({ fen: 'ThJdKc', fen0: '' }))
-              click('turn', () => api.set({ fen: 'ThJdKcAs', fen0: 'ThJdKc' }))
-              click('river', () => api.set({ fen: 'ThJdKcAsAh', fen0: 'ThJdKcAs' }))
-              click('collect', () => api.set({ fen: '', fen0: 'ThJdKcAsAh' }))
+      let thirty_seconds = Date.now() + 30000
+      let twelve_seconds = Date.now() + 18000
+      function hand_middle(hand, middle) {
+              return `1 100/100 2 ${twelve_seconds} ${hand} ${middle}`
+            }
 
-              click('hands', () => api.set({ fen: ' 2c2d ?c?c', fen0: '' }))
-              click('hands_middle', () => api.set({ fen: 'ThJdKcAsAh 2c2d ?c?c', fen0: ' 2c2d ?c?c' }))
-              click('me_time', () => api.set({ me: { start: Date.now() + 30000 }, op: { start: undefined } }))
-              click('op_time', () => api.set({ op: { start: Date.now() + 18000 }, me: { start: undefined } }))
+      function init(api) {
+              click('get', () => api.set({ 
+                      fen: hand_middle('2c2c/?c?c', '2c2d2h'), 
+                      fen0: hand_middle('2c2c/?c?c', '2c2d2h') }))
+
+              click('flop', () => api.set({ 
+                      fen: hand_middle('2c2c/?c?c', 'ThJdKc'), 
+                      fen0: hand_middle('2c2c/?c?c', '') }))
+              click('turn', () => api.set({ 
+                      fen: hand_middle('2c2c/?c?c', 'ThJdKcAs'),
+                      fen0: hand_middle('2c2c/?c?c', 'ThJdKc') }))
+
+              click('river', () => api.set({ 
+                      fen: hand_middle('2c2c/?c?c', 'ThJdKcAsAh'),
+                      fen0: hand_middle('2c2c/?c?c', 'ThJdKcAs') }))
+
+              click('collect', () => api.set({ 
+                      fen: '1 100/100', 
+                      fen0: hand_middle('2c2c/?c?c', 'ThJdKcAsAh') }))
+
+              click('hands', () => api.set({ 
+                      fen: hand_middle('2c2d/?c?c', ''), 
+                      fen0: '1 100/100' }))
+              click('hands_middle', () => api.set({ 
+                      fen: hand_middle('2c2d/?c?c', 'ThJdKcAsAh'),
+                      fen0: hand_middle('2c2d/?c?c', '') }))
+
+              click('me_time', () => api.set({ fen: `1 100/100 1 ${thirty_seconds}` }))
+              click('op_time', () => api.set({ fen: `1 100/100 2 ${twelve_seconds}` }))
             }
 
 
       document.addEventListener('DOMContentLoaded', () => {
-              Space(document.getElementById('app'), { fen: '' }).then(init)
+              Space(document.getElementById('app'), {}).then(init)
       })
     </script>
   </body>
