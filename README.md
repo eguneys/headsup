@@ -8,8 +8,9 @@
 
 ### 2022-04-20
 
-- [x] Middle cards
-- [x] Player hand
+- Middle cards
+- Player hand
+- Player avatar
 
 
 ## TODO
@@ -30,7 +31,7 @@
 - [x] Player hand
 - [ ] Player avatar
 - [ ] Player stack
-- [ ] Player timer
+- [x] Player timer
 - [ ] Action buttons
 - [ ] Chips on action, blinds raises calls etc.
 - [ ] Middle pot
