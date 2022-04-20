@@ -1,3 +1,9 @@
+## NOTES
+
+### 2022-04-20
+
+- What kind of remove animation we should use for the collecting of cards after a round is over
+
 ## CHANGES
 
 ### 2022-04-20

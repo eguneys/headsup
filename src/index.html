@@ -58,8 +58,8 @@ body {
 
               click('hands', () => api.set({ fen: ' 2c2d ?c?c', fen0: '' }))
               click('hands_middle', () => api.set({ fen: 'ThJdKcAsAh 2c2d ?c?c', fen0: ' 2c2d ?c?c' }))
-              click('me_time', () => api.set({ me: { left: 30 }, op: {} }))
-              click('op_time', () => api.set({ me: {}, op: { left: 12 } }))
+              click('me_time', () => api.set({ me: { start: Date.now() + 30000 }, op: { start: undefined } }))
+              click('op_time', () => api.set({ op: { start: Date.now() + 18000 }, me: { start: undefined } }))
             }
 
 

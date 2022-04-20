@@ -3,10 +3,9 @@ import { Rectangle, Quad, Transform, Vec2 } from 'soli2d'
 import { HasPlaysParent, PlayWithTransform, WithPlays, ColorFactory } from './base'
 import { dark, red, green } from './shared'
 import { MouseDrag } from './mouse'
-import { Config } from './play-config'
+import { Config } from './config'
 
 import { is_hidden, HeadsUp as OHeadsUp, Cards as OCards, PovHands as OHands, Card as OCard } from './poker/types'
-import { uci_headsup } from './poker/format/uci'
 import { PlayerConfig } from './types'
 
 
@@ -194,7 +193,7 @@ class Card extends HasPlaysParent {
   }
 }
 
-class Cards extends HasPlaysParent {
+class Middle extends HasPlaysParent {
 
   get deck_card() {
     let res =  new Card(this)
@@ -373,12 +372,12 @@ class Player extends HasPlaysParent {
     return (this.left !== undefined) ? 30 - (this.left / 30) * 30 : 0
   }
 
-  set left(seconds?: number) {
+  set _left(seconds?: number) {
     if (this._i_left) {
       this.t_timer._remove()
     }
 
-    if (seconds) {
+    if (seconds !== undefined) {
       this._i_left = new TweenVal(seconds, 0, ticks.seconds * seconds)
     } else {
       this._i_left = undefined
@@ -387,6 +386,14 @@ class Player extends HasPlaysParent {
 
     if (this._i_left) {
       this.t_timer._set_parent(this.container)
+    }
+  }
+
+  set start(timestamp?: number) {
+    if (timestamp) {
+      this._left = Math.max(0, (timestamp - Date.now()) / 1000)
+    } else {
+      this._left = undefined
     }
   }
 
@@ -435,28 +442,31 @@ class Player extends HasPlaysParent {
 
 class HeadsUp extends WithPlays {
 
+  get state() { return this.data as State }
 
-  get oheadsup() { return this.data as OHeadsUp }
+  get oheadsup() { return this.state.headsup }
 
   get omiddle() { return this.oheadsup.middle }
   get ohands() { return this.oheadsup.hands }
+  get me() { return this.state.me }
+  get op() { return this.state.op }
 
 
   set oheadsup(headsup: OHeadsUp) {
-    this.cards.cards = headsup.middle
+    this.middle.cards = headsup.middle
     this.hand_cards.hands = headsup.hands
   }
 
   set me(me: PlayerConfig) {
-    this._me.left = me.left
+    this._me.start = me.start
   }
 
 
   set op(op: PlayerConfig) {
-    this._op.left = op.left
+    this._op.start = op.start
   }
 
-  cards: Cards
+  middle: Middle
   hand_cards: HandCards
 
   _op: Player
@@ -474,7 +484,7 @@ class HeadsUp extends WithPlays {
     .init()
     .add_after_init()
 
-    this.cards = new Cards(this)
+    this.middle = new Middle(this)
     .init()
     .add_after_init()
 
@@ -487,8 +497,10 @@ class HeadsUp extends WithPlays {
     this._me.x = 140
     this._me.y = 130
 
-    this.cards.cards = this.omiddle
+    this.middle.cards = this.omiddle
     this.hand_cards.hands = this.ohands
+    this.me = this.me
+    this.op = this.op
   }
 }
 
@@ -498,8 +510,8 @@ export default class AllPlays extends PlayWithTransform {
   colors = new ColorFactory(this.image)
 
 
-  get config(): Config {
-    return this.data as Config
+  get state(): State {
+    return this.data as State
   }
 
   headsup!: HeadsUp
@@ -508,23 +520,17 @@ export default class AllPlays extends PlayWithTransform {
     this.container = Template.clone
 
     this.headsup = new HeadsUp(this)
-    ._set_data(uci_headsup(this.config.fen))
+    ._set_data(this.state)
     .init()
 
     this.headsup.add_after_init()
   }
 
-  apply_diff(config: Config) {
-    this._set_data(config)
-    if (this.config.fen !== undefined) {
-      this.headsup.oheadsup = uci_headsup(this.config.fen)
-    }
-    if (this.config.me) {
-      this.headsup.me = this.config.me
-    }
-    if (this.config.op) {
-      this.headsup.op = this.config.op
-    }
+  apply_diff(state: State) {
+    this._set_data(state)
+    this.headsup.oheadsup = this.state.headsup
+    this.headsup.me = this.state.me
+    this.headsup.op = this.state.op
   }
 
   _update(dt: number, dt0: number) {

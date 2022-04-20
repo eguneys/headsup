@@ -2,17 +2,9 @@ import { Soli2d, loop } from 'soli2d'
 import Input from './input'
 import Mouse from './mouse'
 import AllPlays from './play'
-import { Config } from './play-config'
+import { defaults, configure, Config } from './config'
 
-const configure = (_config?: Config) => {
-  if (!_config || _config.fen === undefined) {
-    return { fen: '' }
-  } else {
-    return _config
-  }
-}
-
-export default function ground(image: HTMLImageElement, element: HTMLElement, _config?: Config) {
+export default function ground(image: HTMLImageElement, element: HTMLElement, config?: Config) {
     let [_render, root, $canvas] = Soli2d(element, image, 320, 180)
 
     let input = new Input()
@@ -24,10 +16,11 @@ export default function ground(image: HTMLImageElement, element: HTMLElement, _c
       image
     }
 
-    let config = configure(_config)
+    let maybeState = defaults()
+    let state = configure(maybeState, config || {})
 
     let play = new AllPlays(ctx, root)
-    ._set_data(config)
+    ._set_data(state)
     .init()
     .add_after_init()
     root._update_world()
