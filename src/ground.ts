@@ -4,7 +4,15 @@ import Mouse from './mouse'
 import AllPlays from './play'
 import { Config } from './play-config'
 
-export default function ground(image: HTMLImageElement, element: HTMLElement, config: Config = {}) {
+const configure = (_config?: Config) => {
+  if (!_config || _config.fen === undefined) {
+    return { fen: '' }
+  } else {
+    return _config
+  }
+}
+
+export default function ground(image: HTMLImageElement, element: HTMLElement, _config?: Config) {
     let [_render, root, $canvas] = Soli2d(element, image, 320, 180)
 
     let input = new Input()
@@ -16,8 +24,12 @@ export default function ground(image: HTMLImageElement, element: HTMLElement, co
       image
     }
 
-    let play = new AllPlays(ctx, root)._set_data(config).init()
-    play.add_after_init()
+    let config = configure(_config)
+
+    let play = new AllPlays(ctx, root)
+    ._set_data(config)
+    .init()
+    .add_after_init()
     root._update_world()
 
     let loop_dispose = loop((dt, dt0) => {

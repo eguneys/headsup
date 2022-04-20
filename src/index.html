@@ -41,6 +41,10 @@ body {
       <button id='hands'> Deal Hands </button>
       <button id='hands_middle'> Deal Hands&Middle </button>
     </div>
+    <div class='controls'>
+      <button id='me_time'> My turn </button>
+      <button id='op_time'> Op turn </button>
+    </div>
     <script>
 
       function click(name, fn) { document.getElementById(name).addEventListener('click', fn) }
@@ -54,6 +58,8 @@ body {
 
               click('hands', () => api.set({ fen: ' 2c2d ?c?c', fen0: '' }))
               click('hands_middle', () => api.set({ fen: 'ThJdKcAsAh 2c2d ?c?c', fen0: ' 2c2d ?c?c' }))
+              click('me_time', () => api.set({ me: { left: 30 }, op: {} }))
+              click('op_time', () => api.set({ me: {}, op: { left: 12 } }))
             }
 
 

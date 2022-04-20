@@ -13,7 +13,7 @@ function load_image(path: string): Promise<HTMLImageElement> {
   })
 }
 
-export default function app(element: HTMLElement, config: Config) {
+export default function app(element: HTMLElement, config?: Config) {
   return load_image(sprites_png).then(image => {
     let [play, dispose] = ground(image, element, config)
 

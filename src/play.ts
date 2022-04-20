@@ -1,12 +1,13 @@
 import { ticks } from './shared'
 import { Rectangle, Quad, Transform, Vec2 } from 'soli2d'
 import { HasPlaysParent, PlayWithTransform, WithPlays, ColorFactory } from './base'
-import { dark, red } from './shared'
+import { dark, red, green } from './shared'
 import { MouseDrag } from './mouse'
 import { Config } from './play-config'
 
 import { is_hidden, HeadsUp as OHeadsUp, Cards as OCards, PovHands as OHands, Card as OCard } from './poker/types'
 import { uci_headsup } from './poker/format/uci'
+import { PlayerConfig } from './types'
 
 
 const Template = new Transform()
@@ -348,6 +349,90 @@ class HandCards extends HasPlaysParent {
   }
 }
 
+
+class Player extends HasPlaysParent {
+
+
+  a_bg = this.anim(480, 16, 29, 39)
+  a_timer_bg = this.anim(464, 16, 6, 31)
+
+  a_timer_green = this.colors.quad(green, 1)
+  a_timer_red = this.colors.quad(red, 2)
+
+  t_timer: Transform
+  t_fg: Transform
+
+  _i_left?: TweenVal
+
+
+  get bar_color() {
+    return this.bar_height < 20 ? this.a_timer_green : this.a_timer_red
+  }
+
+  get bar_height() {
+    return (this.left !== undefined) ? 30 - (this.left / 30) * 30 : 0
+  }
+
+  set left(seconds?: number) {
+    if (this._i_left) {
+      this.t_timer._remove()
+    }
+
+    if (seconds) {
+      this._i_left = new TweenVal(seconds, 0, ticks.seconds * seconds)
+    } else {
+      this._i_left = undefined
+    }
+
+
+    if (this._i_left) {
+      this.t_timer._set_parent(this.container)
+    }
+  }
+
+  get left() {
+    return this._i_left?.value
+  }
+
+
+  _init() {
+
+    this.container = Template.clone
+
+    let { a_bg, a_timer_bg } = this
+
+    let bg = a_bg.template
+    bg._set_parent(this.container)
+
+    this.t_timer = Template.clone
+
+    let t_bg = a_timer_bg.template
+    t_bg._set_parent(this.t_timer)
+    t_bg.x = 29 
+    t_bg.y = 5
+
+    let { a_timer_green, a_timer_red } = this
+
+    this.t_fg = Template.clone
+    this.t_fg.quad = a_timer_red
+    this.t_fg.size = Vec2.make(4, 0)
+    this.t_fg.x = 30 
+    this.t_fg.y = 25
+
+    this.t_fg._set_parent(this.t_timer)
+  }
+
+
+  _update(dt: number, dt0: number) {
+    this._i_left?.update(dt, dt0)
+
+    this.t_fg.quad = this.bar_color
+    this.t_fg.y = 35-this.bar_height
+    this.t_fg.size.y = this.bar_height
+  }
+}
+
+
 class HeadsUp extends WithPlays {
 
 
@@ -362,12 +447,32 @@ class HeadsUp extends WithPlays {
     this.hand_cards.hands = headsup.hands
   }
 
+  set me(me: PlayerConfig) {
+    this._me.left = me.left
+  }
+
+
+  set op(op: PlayerConfig) {
+    this._op.left = op.left
+  }
+
   cards: Cards
   hand_cards: HandCards
+
+  _op: Player
+  _me: Player
 
   _init() {
 
     this.container = Template.clone
+
+    this._op = new Player(this)
+    .init()
+    .add_after_init()
+
+    this._me = new Player(this)
+    .init()
+    .add_after_init()
 
     this.cards = new Cards(this)
     .init()
@@ -376,6 +481,11 @@ class HeadsUp extends WithPlays {
     this.hand_cards = new HandCards(this)
     .init()
     .add_after_init()
+
+    this._op.x = 120
+    this._op.y = 10
+    this._me.x = 140
+    this._me.y = 130
 
     this.cards.cards = this.omiddle
     this.hand_cards.hands = this.ohands
@@ -406,7 +516,15 @@ export default class AllPlays extends PlayWithTransform {
 
   apply_diff(config: Config) {
     this._set_data(config)
-    this.headsup.oheadsup = uci_headsup(this.config.fen)
+    if (this.config.fen !== undefined) {
+      this.headsup.oheadsup = uci_headsup(this.config.fen)
+    }
+    if (this.config.me) {
+      this.headsup.me = this.config.me
+    }
+    if (this.config.op) {
+      this.headsup.op = this.config.op
+    }
   }
 
   _update(dt: number, dt0: number) {
