@@ -4,30 +4,51 @@ import { For, on, createEffect, createContext, useContext, createSignal } from '
 
 const Game = () => {
 
-  let flop = [1, 2, 3]
-
   return (<>
-      <For each={flop}>{(card, i) =>
-        <Card x={i()*32} y={30}/>
-      }</For>
-      <Card x={3*32+1} y={30}/>
-      <Card x={4*32+2} y={30}/>
+    <Showcase/>
     </>)
 }
 
-const MoveAndReveal = (props) => {
 
+const Showcase = () => {
+
+  return (<>
+      <Background/>
+
+      <Card/>
+      <CardStack ox={10} oy={10}/>
+    </>)
+
+}
+
+const Background = () => {
+  return (<Anim qs={[0, 332, 320, 180]}/>)
+}
+
+const TweenPosition = () => {
   
+}
+
+const CardStack = props => {
+  let stack = [1,2,3]
+
+  return (<>
+    <For each={stack}>{ (card, i) =>
+      <transform x={props.ox} y={props.oy+ i() * 8}>
+      <Card/>
+      </transform>
+    }</For>
+  </>)
 }
 
 const Card = (props) => {
 
-  return (<transform x={props.x} y={props.y}>
-      <>
-        <Anim qs={[0, 96, 30, 40]}/>
-        <Anim qs={[0, 80, 6, 6]} x={22} y={2}/>
-      </>
-   </transform>)
+  return (<>
+      <Anim qs={[60, 48, 30, 40]} x={1} y={1}/>
+      <Anim qs={[0, 48, 30, 40]}/>
+      <Anim qs={[0, 32, 6, 6]} x={22} y={2}/>
+      <Anim qs={[0, 16, 8, 6]} x={2} y={2}/>
+      </>)
 }
 
 export const Anim = (props) => {
