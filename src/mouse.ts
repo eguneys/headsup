@@ -29,7 +29,7 @@ function move_threshold(move: NumberPair, start: NumberPair) {
 
   let length = Math.sqrt(dx * dx + dy * dy)
 
-  return length > 30
+  return length > 3 
 }
 
 export default class Mouse {

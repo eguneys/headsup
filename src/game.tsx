@@ -1,7 +1,7 @@
 import { ticks } from './shared'
 import { AppProvider, useApp } from './app'
 import { Quad, Vec2 } from 'soli2d-js/web'
-import { onMount, For, on, createEffect, createContext, useContext, createSignal } from 'soli2d-js'
+import { onMount, Show, For, on, createEffect, createContext, useContext, createSignal } from 'soli2d-js'
 
 import { read, owrite, write, TweenVal } from './play'
 import { DragDecay, vec_transform_inverse_matrix } from './play'
@@ -9,8 +9,15 @@ import { DragDecay, vec_transform_inverse_matrix } from './play'
 const Game = () => {
 
   return (<>
-    <Showcase/>
+      <Solitaire/>
     </>)
+}
+
+
+const Solitaire = () => {
+  return (<>
+  <Background/>
+</>)
 }
 
 
@@ -23,13 +30,34 @@ const Showcase = () => {
     owrite(b, b => b+=100)
       }, 1000)
 
+  let [{mouse}] = useApp()
+
+
+let follow_d = createSignal()
+
+const onDrag = (i, decay) => {
+  owrite(follow_d, () => decay.decay)
+  return true
+}
+
+createEffect(() => {
+let { drag } = mouse()
+
+if (drag && drag.drop) {
+  owrite(follow_d, undefined)
+}
+})
+
   return (<>
       <Background/>
 
       <TweenPosition x={read(b)} y={0}>
       <Card/>
       </TweenPosition>
-      <CardStack ox={read(b)} oy={read(b)}/>
+      <CardStack onDrag={onDrag} ox={read(b)} oy={read(b)}/>
+      <Show when={read(follow_d)}>
+        <FollowMouseStack ox={read(follow_d).x} oy={read(follow_d).y} drag={mouse().drag}/>
+      </Show>
     </>)
 
 }
@@ -64,13 +92,30 @@ const TweenPosition = (props) => {
 
 }
 
+const FollowMouseStack = props => {
+  
+  let [{mouse}] = useApp()
+
+  let pos = createSignal()
+
+  createEffect(() => {
+    owrite(pos, () => Vec2.make(...props.drag.move))
+  })
+
+
+  return (<Show when={read(pos)}>
+     <CardStack duration={ticks.one} ox={props.ox + read(pos).x} oy={props.oy + read(pos).y}/> 
+    </Show>)
+
+}
+
 const CardStack = props => {
   let stack = [1,2,3]
 
     return (<>
     <For each={stack}>{ (card, i) =>
-      <TweenPosition duration={ticks.thirds + ticks.three * (i() * i() / 2 + 1)} x={props.ox} y={props.oy + i() * 8}>
-        <Card onDrag={() => console.log(i())}/>
+      <TweenPosition duration={(props.duration || ticks.thirds) + ticks.one * (i() / 2 + 1)} x={props.ox} y={props.oy + i() * 8}>
+        <Card onDrag={props.onDrag ? (e) => props.onDrag(i(), e) : undefined}/>
       </TweenPosition>
       }</For>
       </>)
@@ -102,8 +147,7 @@ export const Anim = (props) => {
 
           if (Math.floor(hit.x) === 0 && Math.floor(hit.y) === 0) {
             let decay = DragDecay.make(drag, t_ref)
-            props.onDrag(decay)
-            return true
+            return props.onDrag(decay)
           }
         }
       }
