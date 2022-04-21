@@ -1,7 +1,7 @@
 import sprites_png from '../assets/sprites.png'
 import { render, Soli2d } from 'soli2d-js/web'
 import Api from './api'
-import App from './app'
+import App from './game'
 
 function load_image(path: string): Promise<HTMLImageElement> {
   return new Promise(resolve => {

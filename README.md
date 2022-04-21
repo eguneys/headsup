@@ -23,6 +23,10 @@ Fen Notation for headsup play
 
 ## TODO
 
+### 2022-04-21
+
+- [ ] [Soli2d] multiple children inside transform
+
 ### 2022-04-20
 
 - [ ] Remove cards animation
@@ -35,10 +39,10 @@ Fen Notation for headsup play
 
 ### 2022-04-18
 
-- [x] Middle cards
-- [x] Player hand
+- [ ] Middle cards
+- [ ] Player hand
 - [ ] Player stack
-- [x] Player timer
+- [ ] Player timer
 - [ ] Action buttons
 - [ ] Chips on action, blinds raises calls etc.
 - [ ] Middle pot
