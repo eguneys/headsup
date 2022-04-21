@@ -1,9 +1,7 @@
 import sprites_png from '../assets/sprites.png'
-import Snabbdom from './snabbdom'
-import view from './view'
-import Ctrl from './ctrl'
-import ground from './ground'
+import { render, Soli2d } from 'soli2d-js/web'
 import Api from './api'
+import App from './app'
 
 function load_image(path: string): Promise<HTMLImageElement> {
   return new Promise(resolve => {
@@ -15,8 +13,9 @@ function load_image(path: string): Promise<HTMLImageElement> {
 
 export default function app(element: HTMLElement, config?: Config) {
   return load_image(sprites_png).then(image => {
-    let [play, dispose] = ground(image, element, config)
 
-    return Api(play)
+    let [_render, root, $canvas] = Soli2d(element, image, 320, 180)
+    render(App(_render, image, root, $canvas), root)
+
   })
 }
