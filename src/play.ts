@@ -44,11 +44,15 @@ export class DragDecay {
 
 
   get translate() {
-    return this.move.add(this.decay)
+    return this.drag_move.add(this.decay)
   }
 
   get move() {
-    return vec_transform_inverse_matrix(Vec2.make(...this.drag.move), this.parent)
+    return vec_transform_inverse_matrix(this.drag_move, this.parent)
+  }
+
+  get drag_move() {
+    return Vec2.make(...this.drag.move)
   }
 
   get parent() {

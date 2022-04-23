@@ -7,7 +7,7 @@ const AppContext = createContext<AppContextValue>({})
 export const AppProvider = (props) => {
   const [image, _setImage] = createSignal()
   const [root, _setRoot] = createSignal()
-  const [update, setUpdate] = createSignal([16, 16])
+  const [update, setUpdate] = createSignal([16, 16], { equals: false })
   const [mouse, setMouse] = createSignal(new Mouse(props.$canvas).init(), { equals: false })
   const [render, setRender] = createSignal(undefined, { equals: false })
 
