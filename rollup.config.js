@@ -2,7 +2,8 @@ import { nodeResolve } from '@rollup/plugin-node-resolve'
 const htmlTemplate = require('rollup-plugin-generate-html-template')
 
 import babel from '@rollup/plugin-babel'
-const image = require('@rollup/plugin-image')
+//const image = require('@rollup/plugin-image')
+import url from '@rollup/plugin-url'
 
 const serve = require('rollup-plugin-serve')
 const livereload = require('rollup-plugin-livereload')
@@ -32,7 +33,8 @@ export default args => {
     plugins: [
       nodeResolve({ extensions, browser: true }),
       babel({ extensions, babelHelpers: 'bundled' }),
-     image(),
+     //image(),
+      url({ limit: 1000 }),
       css(),
       htmlTemplate({
         template: 'src/index.html',
