@@ -1,6 +1,8 @@
 import { ticks } from './shared'
 import Mouse from './mouse'
 import { createRoot, untrack, createMemo, onCleanup, on, batch, createSignal, createEffect } from 'soli2d-js'
+import { Vec2 } from 'soli2d-js/web'
+import { vec_transform_inverse_matrix } from './play'
 import { read, write, owrite } from './play'
 import { useApp } from './app'
 
@@ -39,6 +41,9 @@ export class LerpVal {
 
 export abstract class HasPosition {
 
+
+  _ref?: Transform
+
   duration: number
 
   _x: LerpVal
@@ -69,12 +74,30 @@ export abstract class HasPosition {
     this._x = new LerpVal(x)
     this._y = new LerpVal(y)
   }
+
+  _set_ref = (ref: Transform) => {
+    this._ref = ref
+  }
+  
+  has_dropped(drop: Vec2) {
+    if (this._ref) {
+
+      let hit = vec_transform_inverse_matrix(drop, this._ref)
+
+      if (Math.floor(hit.x) === 0 && Math.floor(hit.y) === 0) {
+        return true
+      }
+    }
+    return false
+  }
 }
 
 export class HasPositionCard extends HasPosition {
+
   constructor(readonly card: Card, x: number, y: number, duration: number) {
     super(x, y, duration)
   }
+
 }
 
 export type CardStack = Array<HasPositionCard>
@@ -107,8 +130,7 @@ export class DragPile {
                     this._drag_pile.y = decay.translate.y
 
                     if (drag.drop) {
-                      orig.add_stack(stack)
-                      solitaire.drop()
+                      solitaire.drop(Vec2.make(...drag.drop))
                       dispose()
                     }
                   })
@@ -130,20 +152,38 @@ export class Solitaire {
       [1]
     ]
 
-    return new Solitaire(_piles)
+    let _holes = [
+      [1,2],
+      [1],
+      [1],
+      [1,2]
+    ]
+
+    return new Solitaire(_piles, _holes)
   }
 
   piles: Array<Pile>
+  holes: Array<Pile>
 
   drag_pile: Signal<DragPile | undefined>
 
-  constructor(piles: Array<Array<OCard>>) {
+  constructor(piles: Array<Array<OCard>>, 
+              holes: Array<Array<OCard>>) {
     this.piles = piles.map((_, i) => {
       let x = 50 + i * 33,
         y = 12
 
       let stack = _.map(_ => new HasPositionCard(_, x, y))
       return new Pile(this, stack, x, y)
+    })
+
+
+    this.holes = holes.map((_, i) => {
+      let x = 283,
+      y = 12 + i * 42
+
+      let stack = _.map(_ => new HasPositionCard(_, x, y))
+      return new Pile(this, stack, x, y, 0)
     })
 
     this.drag_pile = createSignal()
@@ -153,11 +193,19 @@ export class Solitaire {
     owrite(this.drag_pile, drag_pile)
   }
 
-  drop() {
+  drop(drop: Vec2) {
     let drag_pile = read(this.drag_pile)
 
-    //drag_pile.pile.add(drag_pile.stack)
+    let dropped_pile = this.piles.find(_ => _.has_dropped_on_top(drop))
+    let hole_drop = this.holes.find(_ => _.has_dropped_on_top(drop))
 
+    if (dropped_pile) {
+      dropped_pile.add_stack(drag_pile.stack)
+    } else if (hole_drop) {
+      hole_drop.add_stack(drag_pile.stack)
+    } else {
+      drag_pile.orig.add_stack(drag_pile.stack)
+    }
 
     owrite(this.drag_pile, undefined)
   }
@@ -165,14 +213,18 @@ export class Solitaire {
 
 export class Pile extends HasPosition {
 
+  gap: number
   pile: Signal<CardStack>
 
   constructor(readonly solitaire: Solitaire, 
               pile: CardStack,
               x: number,
-              y: number) {
+              y: number,
+              gap: number = 8) {
                 super(x, y, ticks.one)
     this.pile = createSignal(pile, { equals: false })
+
+    this.gap = gap
 
     createEffect(() => {
       read(this.pile).forEach((_, i, arr) => {
@@ -182,10 +234,20 @@ export class Pile extends HasPosition {
         batch(() => {
           _.lerp = 0.1 + (_i2 * 0.1)
           _.x = this.x
-          _.y = this.y + i * 8
+          _.y = this.y + i * this.gap
         })
       })
     })
+  }
+
+  has_dropped_on_top(drop: Vec2) {
+    let _pile = read(this.pile)
+
+    if (_pile.length > 0) {
+      return _pile[_pile.length-1].has_dropped(drop)
+    } else {
+      return this.has_dropped(drop)
+    }
   }
 
   begin_drag(i: number, decay: DragDecay) {
@@ -266,11 +328,6 @@ export class TweenVal {
 
                 this._value = createMemo(() => {
                   return this.a * (1 - this.i) + this.b * this.i
-                })
-
-                createEffect(() => {
-                  if (this.i < 1)
-                  console.log(this.i)
                 })
 
                 let [{update}] = useApp()

@@ -32,8 +32,24 @@ createEffect(() => {
   <Background/>
 
   <For each={solitaire.piles}>{ (pile, i) =>
+    <>
+    <HasPosition x={pile.x} y={pile.y}>
+      <DropTarget set_ref={pile._set_ref} qs={[0, 0, 30, 40]}/>
+    </HasPosition>
     <CardStack onDrag={(_i, decay) => { pile.begin_drag(_i, decay); return true }} stack={read(pile.pile)}/>
+    </>
   }</For>
+
+
+  <For each={solitaire.holes}>{ (hole, i) =>
+    <>
+      <HasPosition x={hole.x} y={hole.y}>
+        <DropTarget set_ref={hole._set_ref} qs={[0, 0, 30, 40]}/>
+      </HasPosition>
+      <CardStack onDrag={(_i, decay) => { hole.begin_drag(_i, decay); return true }} stack={read(hole.pile)}/>
+    </>
+  }</For>
+
   <Show when={read(solitaire.drag_pile)}>{ value =>
   <CardStack stack={value.stack}/>
   }</Show>
@@ -52,7 +68,7 @@ const CardStack = props => {
     return (<>
     <For each={props.stack}>{ (card, i) =>
       <HasPosition x={card.x} y={card.y}>
-        <Card card={card.card} onDrag={props.onDrag ? (e) => props.onDrag(i(), e) : undefined}/>
+        <Card set_ref={card._set_ref} card={card.card} onDrag={props.onDrag ? (e) => props.onDrag(i(), e) : undefined}/>
       </HasPosition>
       }</For>
       </>)
@@ -63,25 +79,27 @@ const CardStack = props => {
 const Card = (props) => {
 
   return (<>
+      <DropTarget set_ref={props.set_ref} onDrag={props.onDrag} qs={[0, 48, 30, 40]}/>
       <Anim qs={[60, 48, 30, 40]} x={1} y={1}/>
-      <Anim onDrag={props.onDrag} qs={[0, 48, 30, 40]}/>
+      <Anim qs={[0, 48, 30, 40]}/>
       <Anim qs={[0, 32, 6, 6]} x={22} y={2}/>
       <Anim qs={[0, 16, 8, 6]} x={2} y={2}/>
       </>)
 }
 
-export const Anim = (props) => {
+export const DropTarget = (props) => {
 
-  const [{image, root, mouse, update}] = useApp()
+  const [{mouse}] = useApp()
+
   let t_ref
 
-  if (props.onDrag) {
-
-    onMount(() => {
+  onMount(() => {
+    props.set_ref?.(t_ref)
+    if (props.onDrag) {
       t_ref.on_event = () => {
         let { drag } = mouse()
 
-        if (drag && !drag.move0) {
+        if (drag && !drag.move0 && !drag.drop) {
           let hit = vec_transform_inverse_matrix(Vec2.make(...drag.start), t_ref)
 
           if (Math.floor(hit.x) === 0 && Math.floor(hit.y) === 0) {
@@ -90,11 +108,21 @@ export const Anim = (props) => {
           }
         }
       }
-   })
-  }
+    }
+ })
 
   return (<transform
           ref={t_ref}
+          size={Vec2.make(props.qs[2], props.qs[3])}
+          x={props.x}
+          y={props.y}
+          />)
+}
+export const Anim = (props) => {
+
+  let [{image}] = useApp()
+
+  return (<transform
           quad={Quad.make(image(), ...props.qs)}
           size={Vec2.make(props.qs[2], props.qs[3])}
           x={props.x}
