@@ -5,99 +5,79 @@ import { Vec2 } from 'soli2d-js/web'
 import { vec_transform_inverse_matrix } from './play'
 import { read, write, owrite } from './play'
 import { useApp } from './app'
+import { back_card } from './poker/types'
+
+import { HasPosition, LerpVal, LoopVal, TweenVal, PingPongVal } from './lerps'
 
 export type OCard = number
-
-export class LerpVal {
-
-  _b: Signal<number>
-
-  _i: Signal<number>
-
-  get value() {
-    return read(this._i)
-  }
-
-  lerp: number = 0.5
-
-  constructor(a: number, b: number = a) {
-    this._b = createSignal(b)
-    this._i = createSignal(a)
-
-    let [{update}] = useApp()
-
-    createEffect(on(update, ([dt, dt0]) => {
-      let value = this.lerp
-      let dst = read(this._b)
-      owrite(this._i, i => i * (1 - value) + dst * value)
-    }))
-  }
-
-
-  new_b(b: number) {
-    owrite(this._b, b)
-  }
-}
-
-export abstract class HasPosition {
-
-
-  _ref?: Transform
-
-  duration: number
-
-  _x: LerpVal
-  _y: LerpVal
-
-  get x() {
-    return this._x.value
-  }
-
-  get y() {
-    return this._y.value
-  }
-
-  set x(x: number) {
-    this._x.new_b(x)
-  }
-
-  set y(y: number) {
-    this._y.new_b(y)
-  }
-
-  set lerp(v: number) {
-    this._x.lerp = v
-    this._y.lerp = v
-  }
-
-  constructor(x: number, y: number) {
-    this._x = new LerpVal(x)
-    this._y = new LerpVal(y)
-  }
-
-  _set_ref = (ref: Transform) => {
-    this._ref = ref
-  }
-  
-  has_dropped(drop: Vec2) {
-    if (this._ref) {
-
-      let hit = vec_transform_inverse_matrix(drop, this._ref)
-
-      if (Math.floor(hit.x) === 0 && Math.floor(hit.y) === 0) {
-        return true
-      }
-    }
-    return false
-  }
-}
-
 export class HasPositionCard extends HasPosition {
 
-  constructor(readonly card: Card, x: number, y: number, duration: number) {
-    super(x, y, duration)
+  i_reveal: PingPongVal
+
+
+  get hide() {
+    if (this.i_reveal.resolve === PingPongVal.A) {
+      return this.i_reveal.value
+    }
   }
 
+  get reveal() {
+    if (this.i_reveal.resolve === PingPongVal.B && !this.i_reveal.resolved) {
+      return this.i_reveal.value
+    }
+  }
+
+  get show() {
+    if (this.i_reveal.resolve === PingPongVal.B && this.i_reveal.resolved) {
+      return this
+    }
+  }
+
+  get ping_pong() {
+    if (this.i_reveal.resolve === undefined) {
+      return this.i_reveal.value
+    }
+  }
+
+  _card: Signal<OCard | undefined>
+
+  get card() {
+    return read(this._card)
+  }
+
+  set card(card?: OCard) {
+    owrite(this._card, card)
+  }
+
+
+  waiting() {
+    this.card = undefined
+    this.i_reveal.resolve = undefined
+  }
+
+  constructor(x: number, y: number, card?: OCard) {
+    super(x, y)
+
+    this._card = createSignal(card)
+
+    this.i_reveal = new PingPongVal(0, 1, ticks.half + ticks.thirds, TweenVal.quad_in_out)
+
+    setTimeout(() => {
+      this.waiting()
+      setTimeout(() => {
+        this.card = 12
+      }, 800)
+    }, 2000)
+
+    createEffect(on(this._card[0], (value?: OCard, prev_value?: OCard) => {
+      if (!!prev_value && !value) {
+        this.i_reveal.resolve = PingPongVal.A
+      }
+      if (!prev_value && !!value) {
+        this.i_reveal.resolve = PingPongVal.B
+      }
+    }))
+ }
 }
 
 export type CardStack = Array<HasPositionCard>
@@ -113,13 +93,7 @@ export class DragPile {
 
                 createRoot(dispose => {
 
-                  stack.forEach((_, i) => {
-                    let _i = 1-(i / stack.length),
-                      _i2 = (_i + 1) * (_i + 1) * (_i + 1) / 8
-                    _.lerp = 0.1 + (_i2 * 0.5)
-                  })
-
-                  this._drag_pile = new Pile(solitaire, stack, decay.translate.x, decay.translate.y)
+                  this._drag_pile = new Pile(solitaire, stack, decay.translate.x, decay.translate.y, 8, 0.5)
 
                   let [{mouse}] = useApp()
 
@@ -135,12 +109,23 @@ export class DragPile {
                     }
                   })
                 })
-  }
+              }
 }
 
 export class Solitaire {
 
   static make = () => {
+
+    let _back_piles = [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5, 
+      6
+    ]
+
 
     let _piles = [
       [1, 2, 3, 4, 5, 6],
@@ -159,21 +144,34 @@ export class Solitaire {
       [1,2]
     ]
 
-    return new Solitaire(_piles, _holes)
+    return new Solitaire(_back_piles, _piles, _holes)
   }
 
+  back_piles: Array<Pile>
   piles: Array<Pile>
   holes: Array<Pile>
 
   drag_pile: Signal<DragPile | undefined>
 
-  constructor(piles: Array<Array<OCard>>, 
+  constructor(back_piles: Array<number>,
+              piles: Array<Array<OCard>>, 
               holes: Array<Array<OCard>>) {
+
+    
+    this.back_piles = back_piles.map((_, i) => {
+      let x = 50 + i * 33,
+        y = 12
+
+      let stack = [...Array(_).keys()].map(_ => new HasPositionCard(back_card, x, y))
+      return new Pile(this, stack, x, y)
+    })
+
+
     this.piles = piles.map((_, i) => {
       let x = 50 + i * 33,
         y = 12
 
-      let stack = _.map(_ => new HasPositionCard(_, x, y))
+      let stack = _.map(_ => new HasPositionCard(_, x, y, true))
       return new Pile(this, stack, x, y)
     })
 
@@ -187,6 +185,13 @@ export class Solitaire {
     })
 
     this.drag_pile = createSignal()
+
+
+    createEffect(() => {
+      this.back_piles
+      .forEach((back_pile, i) =>
+               this.piles[i].y = back_pile.back_on_top_y)
+    })
   }
 
   drag(drag_pile: DragPile) {
@@ -216,11 +221,17 @@ export class Pile extends HasPosition {
   gap: number
   pile: Signal<CardStack>
 
+
+  get back_on_top_y() {
+    return this.y + read(this.pile).length * this.gap
+  }
+
   constructor(readonly solitaire: Solitaire, 
               pile: CardStack,
               x: number,
               y: number,
-              gap: number = 8) {
+              gap: number = 8,
+              lerp_mul: number = 0.1) {
                 super(x, y, ticks.one)
     this.pile = createSignal(pile, { equals: false })
 
@@ -232,7 +243,7 @@ export class Pile extends HasPosition {
           _i2 = (_i + 1) * (_i + 1) * (_i + 1) / 8
 
         batch(() => {
-          _.lerp = 0.1 + (_i2 * 0.1)
+          _.lerp = 0.1 + (_i2 * lerp_mul)
           _.x = this.x
           _.y = this.y + i * this.gap
         })
@@ -268,87 +279,4 @@ export class Pile extends HasPosition {
     })
   }
 }
-
-
-
-export class TweenVal {
-
-  static linear = t => t
-  static quad_in = t => t * t
-  static quad_out = t => -t * (t - 2)
-  static quad_in_out = t => t<.5 ? 2*t*t : -1+(4-2*t)*t 
-  static cubit_in = t => t * t * t
-
-  _elapsed: Signal<number> = createSignal(0)
-
-  get _i() {
-    return Math.min(1, read(this._elapsed) / this.duration)
-  }
-
-  get i() {
-    return this.easing(this._i)
-  }
-
-  get has_reached() {
-    return this.i === 1 && this._i0 !== this.i
-  }
-
-  get a() {
-    return read(this._a)
-  }
-
-  get b() {
-    return read(this._b)
-  }
-
-  _i0: number
-
-  _a: Signal<number>
-  _b: Signal<number>
-  duration: number
-  easing: Easing
-
-  _value: Memo<number>
-
-
-  get value() {
-    return this._value()
-  }
-
-  constructor(a: number,
-              b: number,
-              duration: number = ticks.sixth,
-              easing: Easing = TweenVal.linear) {
-
-                this._a = createSignal(a)
-                this._b = createSignal(b)
-
-                this.duration = duration
-                this.easing = easing
-
-                this._value = createMemo(() => {
-                  return this.a * (1 - this.i) + this.b * this.i
-                })
-
-                let [{update}] = useApp()
-
-                createEffect(on(update, ([dt, dt0]) => {
-                  this._i0 = this.i
-                  owrite(this._elapsed, _ => _ += dt)
-                }))
-              }
-
-  new_b(b: number, duration = this.duration) {
-    this.duration = duration
-    batch(() => {
-      owrite(this._b, b)
-      untrack(() => {
-        if (read(this._elapsed) > this.duration) {
-          owrite(this._elapsed, 0)
-        }
-      })
-    })
-  }
-}
-
 

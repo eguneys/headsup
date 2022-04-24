@@ -3,6 +3,8 @@ export type Rank = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14
 
 export type Card = number
 
+export const back_card = card(1, 14)
+
 export function card(suit: Suit, rank: Rank) {
   return suit * 20 + rank
 }

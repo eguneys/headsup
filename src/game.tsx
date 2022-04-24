@@ -23,13 +23,16 @@ const Solitaire = () => {
 
   let solitaire = OSolitaire.make()
 
-createEffect(() => {
-//console.log(read(solitaire.drag_pile)?.stack[0].x)
-})
-
-
   return (<>
   <Background/>
+
+  <HasPosition x={6} y={12}>
+    <BackCard/>
+  </HasPosition>
+
+  <For each={solitaire.back_piles}>{ (pile, i) =>
+    <BackCardStack stack={read(pile.pile)}/>
+  }</For>
 
   <For each={solitaire.piles}>{ (pile, i) =>
     <>
@@ -51,7 +54,9 @@ createEffect(() => {
   }</For>
 
   <Show when={read(solitaire.drag_pile)}>{ value =>
-  <CardStack stack={value.stack}/>
+  <TweenPosition ix={0} iy={0} x={-3} y={-3} duration={ticks.three}>
+    <CardStack shadow={2} stack={value.stack}/>
+  </TweenPosition>
   }</Show>
 
   </>)
@@ -64,23 +69,56 @@ const HasPosition = props => {
       </transform>)
 }
 
+const BackCardStack = props => {
+    return (<>
+    <For each={props.stack}>{ (card, i) =>
+      <HasPosition x={card.x} y={card.y}>
+        <BackCard/>
+      </HasPosition>
+      }</For>
+      </>)
+}
+
 const CardStack = props => {
     return (<>
     <For each={props.stack}>{ (card, i) =>
       <HasPosition x={card.x} y={card.y}>
-        <Card set_ref={card._set_ref} card={card.card} onDrag={props.onDrag ? (e) => props.onDrag(i(), e) : undefined}/>
+        <CardHasPosition onDrag={props.onDrag ? (e) => props.onDrag(i(), e): undefined} shadow={props.shadow} card={card}/>
       </HasPosition>
       }</For>
       </>)
 }
 
 
+const BackCard = (props) => {
+  return (<>
+      <Anim qs={[60, 48, 30, 40]} x={1} y={1}/>
+      <Anim qs={[30, 48, 30, 40]}/>
+      </>)
+}
+
+const CardHasPosition = (props) => {
+  return (<>
+<Show when={ props.card.ping_pong ??  props.card.reveal ??  props.card.hide }>{ value =>
+<RevealCard frame={Math.floor((value===1?0.9:value)*5)}/>
+}</Show>
+<Show when={props.card.show}>{ value =>
+<Card shadow={props.shadow} set_ref={value._set_ref} card={value} onDrag={props.onDrag}/>
+}</Show>
+ </>)
+}
+
+const RevealCard = (props) => {
+  return (<>
+    <Anim qs={[90 + props.frame * 30, 48, 30, 40]}/>
+    </>)
+}
 
 const Card = (props) => {
 
   return (<>
       <DropTarget set_ref={props.set_ref} onDrag={props.onDrag} qs={[0, 48, 30, 40]}/>
-      <Anim qs={[60, 48, 30, 40]} x={1} y={1}/>
+      <Anim qs={[60, 48, 30, 40]} x={props.shadow || 1} y={props.shadow || 1}/>
       <Anim qs={[0, 48, 30, 40]}/>
       <Anim qs={[0, 32, 6, 6]} x={22} y={2}/>
       <Anim qs={[0, 16, 8, 6]} x={2} y={2}/>
