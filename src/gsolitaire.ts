@@ -62,12 +62,18 @@ export class HasPositionCard extends HasPosition {
 
     this.i_reveal = new PingPongVal(0, 1, ticks.half + ticks.thirds, TweenVal.quad_in_out)
 
+    if (!card) {
+      this.i_reveal.resolve = PingPongVal.A
+    }
+
+    /*
     setTimeout(() => {
       this.waiting()
       setTimeout(() => {
         this.card = 12
       }, 800)
     }, 2000)
+   */
 
     createEffect(on(this._card[0], (value?: OCard, prev_value?: OCard) => {
       if (!!prev_value && !value) {
@@ -81,36 +87,6 @@ export class HasPositionCard extends HasPosition {
 }
 
 export type CardStack = Array<HasPositionCard>
-
-export class DragPile {
-
-  _drag_pile!: Pile
-
-  constructor(readonly solitaire: Solitaire, 
-              readonly decay: DragDecay, 
-              readonly stack: CardStack, 
-              readonly orig: Pile) {
-
-                createRoot(dispose => {
-
-                  this._drag_pile = new Pile(solitaire, stack, decay.translate.x, decay.translate.y, 8, 0.5)
-
-                  let [{mouse}] = useApp()
-
-                  createEffect(() => {
-                    let { drag } = mouse()
-
-                    this._drag_pile.x = decay.translate.x
-                    this._drag_pile.y = decay.translate.y
-
-                    if (drag.drop) {
-                      solitaire.drop(Vec2.make(...drag.drop))
-                      dispose()
-                    }
-                  })
-                })
-              }
-}
 
 export class Solitaire {
 
@@ -162,8 +138,8 @@ export class Solitaire {
       let x = 50 + i * 33,
         y = 12
 
-      let stack = [...Array(_).keys()].map(_ => new HasPositionCard(back_card, x, y))
-      return new Pile(this, stack, x, y)
+      let stack = [...Array(_).keys()].map(_ => new HasPositionCard(x, y))
+      return new Pile(this, i, stack, x, y)
     })
 
 
@@ -171,8 +147,8 @@ export class Solitaire {
       let x = 50 + i * 33,
         y = 12
 
-      let stack = _.map(_ => new HasPositionCard(_, x, y, true))
-      return new Pile(this, stack, x, y)
+      let stack = _.map(_ => new HasPositionCard(x, y, _, true))
+      return new Pile(this, i, stack, x, y)
     })
 
 
@@ -180,8 +156,8 @@ export class Solitaire {
       let x = 283,
       y = 12 + i * 42
 
-      let stack = _.map(_ => new HasPositionCard(_, x, y))
-      return new Pile(this, stack, x, y, 0)
+      let stack = _.map(_ => new HasPositionCard(x, y, _))
+      return new Pile(this, i, stack, x, y, 0)
     })
 
     this.drag_pile = createSignal()
@@ -194,19 +170,32 @@ export class Solitaire {
     })
   }
 
+  maybe_reveal(index: number) {
+    let orig = this.piles[index],
+      back = this.back_piles[index]
+
+    if (orig.empty) {
+      let head = back.head
+      if (head) {
+        head.waiting()
+      }
+    }
+  }
+
+
   drag(drag_pile: DragPile) {
     owrite(this.drag_pile, drag_pile)
   }
 
-  drop(drop: Vec2) {
-    let drag_pile = read(this.drag_pile)
-
+  drop(drop: Vec2, drag_pile: DragPile) {
     let dropped_pile = this.piles.find(_ => _.has_dropped_on_top(drop))
     let hole_drop = this.holes.find(_ => _.has_dropped_on_top(drop))
 
     if (dropped_pile) {
+      this.maybe_reveal(drag_pile.orig.index)
       dropped_pile.add_stack(drag_pile.stack)
     } else if (hole_drop) {
+      this.maybe_reveal(drag_pile.orig.index)
       hole_drop.add_stack(drag_pile.stack)
     } else {
       drag_pile.orig.add_stack(drag_pile.stack)
@@ -226,7 +215,22 @@ export class Pile extends HasPosition {
     return this.y + read(this.pile).length * this.gap
   }
 
+
+  get empty() {
+    return read(this.pile).length === 0
+  }
+
+  get head() {
+    let pile = read(this.pile)
+    return pile[pile.length -1 ]
+  }
+
+  get back_pile() {
+    return this.solitaire.back_piles[this.index]
+  }
+
   constructor(readonly solitaire: Solitaire, 
+              readonly index: number,
               pile: CardStack,
               x: number,
               y: number,
@@ -280,3 +284,33 @@ export class Pile extends HasPosition {
   }
 }
 
+
+export class DragPile {
+
+  _drag_pile!: Pile
+
+  constructor(readonly solitaire: Solitaire, 
+              readonly decay: DragDecay, 
+              readonly stack: CardStack, 
+              readonly orig: Pile) {
+
+                createRoot(dispose => {
+
+                  this._drag_pile = new Pile(solitaire, orig.index, stack, decay.translate.x, decay.translate.y, 8, 0.5)
+
+                  let [{mouse}] = useApp()
+
+                  createEffect(() => {
+                    let { drag } = mouse()
+
+                    this._drag_pile.x = decay.translate.x
+                    this._drag_pile.y = decay.translate.y
+
+                    if (drag.drop) {
+                      solitaire.drop(Vec2.make(...drag.drop), this)
+                      dispose()
+                    }
+                  })
+                })
+              }
+}

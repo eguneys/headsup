@@ -31,7 +31,7 @@ const Solitaire = () => {
   </HasPosition>
 
   <For each={solitaire.back_piles}>{ (pile, i) =>
-    <BackCardStack stack={read(pile.pile)}/>
+    <CardStack stack={read(pile.pile)}/>
   }</For>
 
   <For each={solitaire.piles}>{ (pile, i) =>
@@ -67,16 +67,6 @@ const HasPosition = props => {
   return (<transform tint={props.tint} x={props.x} y={props.y}>
       {props.children}
       </transform>)
-}
-
-const BackCardStack = props => {
-    return (<>
-    <For each={props.stack}>{ (card, i) =>
-      <HasPosition x={card.x} y={card.y}>
-        <BackCard/>
-      </HasPosition>
-      }</For>
-      </>)
 }
 
 const CardStack = props => {

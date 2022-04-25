@@ -18,9 +18,9 @@
 
 ### 2022-04-23
 
-- [ ] Show back cards
-- [ ] Reveal back cards
 - [ ] Deal from stock to the waste
+- [ ] Reveal back cards
+- [x] Show back cards
 - [x] Drag from holes to piles
 - [x] Drop on empty piles, holes
 - [ ] Drag release z index issue
