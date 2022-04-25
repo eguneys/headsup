@@ -177,6 +177,7 @@ export class Solitaire {
     if (orig.empty) {
       let head = back.head
       if (head) {
+        console.trace('here', index)
         head.waiting()
       }
     }
