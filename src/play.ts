@@ -1,5 +1,5 @@
 import { ticks } from './shared'
-import { Rectangle, Quad, Transform, Vec2 } from 'soli2d'
+import { Rectangle, Quad, Transform, Vec2 } from 'soli2d-js/web'
 import { dark, red, green } from './shared'
 import { MouseDrag } from './mouse'
 import { Config } from './config'

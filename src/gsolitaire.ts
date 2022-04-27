@@ -6,13 +6,15 @@ import { vec_transform_inverse_matrix } from './play'
 import { read, write, owrite } from './play'
 import { useApp } from './app'
 
+import { Card as OCard, Pile as OPile } from 'cardstwo'
 import { pile_sol, hole_sol, sol_pile, sol_hole, is_hole_index, is_pile_index } from 'cardstwo'
 
 import { HasPosition, LerpVal, LoopVal, TweenVal, PingPongVal } from './lerps'
 
 import { Anim } from './anim'
 
-export type OCard = number
+import { same } from './util'
+
 export class HasPositionCard extends HasPosition {
 
   i_reveal: PingPongVal
@@ -141,6 +143,28 @@ export class Solitaire {
     })
   }
 
+  a_diffs(addeds: Array<SolIndex, OPile>,
+    removeds: Array<SolIndex, OPile>) {
+
+    let drag_pile = read(this.drag_pile)
+
+    removeds.forEach(removed => {
+      addeds.find(added => {
+        if (same(removed[1], added[1])) {
+          if (removed[0] === drag_pile.orig) {
+            this._drop_drag_pile(added[0])
+            drag_pile = undefined
+          }
+        }
+      })
+    })
+
+    
+    if (drag_pile) {
+      this._drop_drag_pile(drag_pile.orig)
+    }
+  }
+
   a_wait_reveal(index: number) {
     let pile = this.back_piles[index]
     pile.head.waiting()
@@ -211,6 +235,12 @@ export class Pile extends HasPosition {
     return this.solitaire.back_piles[this.index]
   }
 
+
+  get opile() {
+    let pile = read(this.pile)
+    return pile.map(_ => _.card)
+  }
+
   constructor(readonly solitaire: Solitaire, 
               readonly index: number,
               pile: CardStack,
@@ -251,7 +281,7 @@ export class Pile extends HasPosition {
     let { pile, solitaire } = this
     let [{update}] = useApp()
 
-    let orig_index = this.index + i * 100
+    let orig_index = this.index + i
 
     write(pile, _ => {
       let stack = _.splice(i, _.length)
