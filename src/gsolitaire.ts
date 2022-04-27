@@ -141,18 +141,10 @@ export class Solitaire {
     })
   }
 
-  maybe_reveal(index: number) {
-    let orig = this.piles[index],
-      back = this.back_piles[index]
-
-    if (orig.empty) {
-      let head = back.head
-      if (head) {
-        head.waiting()
-      }
-    }
+  a_wait_reveal(index: number) {
+    let pile = this.back_piles[index]
+    pile.head.waiting()
   }
-
 
   drag(drag_pile: DragPile) {
     owrite(this.drag_pile, drag_pile)
@@ -171,7 +163,7 @@ export class Solitaire {
 
 
     if (drop_sol) {
-
+      this.anim.g_drag_drop(drag_pile.orig, drop_sol)
     } else {
       this._drop_drag_pile(drag_pile.orig)
     }

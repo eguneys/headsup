@@ -1,12 +1,13 @@
 import { Solitaire as GSolitaire } from './gsolitaire'
 import { Card, Pile, card, card_suit, card_rank } from 'cardstwo'
+import { sol_pile } from 'cardstwo'
 
 export class Solitaire {
 
   get clone() {
     let holes = this.holes.map(_ => _.slice(0))
     let piles = this.piles.map(_ =>
-                               ([_[0].slice(0),
+                               ([_[0],
                                  _[1].slice(0)] as [Pile, Pile]))
 
     let reveals = this.reveals.slice(0)
@@ -49,6 +50,9 @@ export class Solitaire {
     return this._cut_pile_in(orig)
   }
 
+  _paste_in(dest: SolIndex, pile: Pile) {
+    return this._paste_pile_in(dest, pile)
+  }
 
 
   drop_in(orig: SolIndex, dest: SolIndex) {
