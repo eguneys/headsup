@@ -8,20 +8,17 @@ import { DragDecay, vec_transform_inverse_matrix } from './play'
 
 import { Solitaire as OSolitaire } from './gsolitaire'
 
-const Game = () => {
+const Game = (props) => {
 
   return (<>
-      <Solitaire/>
+      <Solitaire solitaire={props.solitaire}/>
     </>)
 }
 
 
-const Solitaire = () => {
+const Solitaire = (props) => {
 
-  let [{mouse, update}] = useApp()
-
-
-  let solitaire = OSolitaire.make()
+  let { solitaire } = props
 
   return (<>
   <Background/>
@@ -236,7 +233,7 @@ if (drag && drag.drop) {
 
 
 
-const App = (_render, _image, _root, $canvas) => {
+const App = (anim, _render, _image, _root, $canvas) => {
 
   let _App = () => {
 
@@ -250,7 +247,9 @@ const App = (_render, _image, _root, $canvas) => {
          _render()
       }))
 
-    return (<Game/>)
+    anim.set_front()
+
+    return (<Game solitaire={anim.front}/>)
   }
 
   return () => (<AppProvider $canvas={$canvas}> <_App/> </AppProvider>)
