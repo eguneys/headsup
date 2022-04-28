@@ -6,15 +6,18 @@ import { onCleanup, onMount, Show, For, on, createEffect, createContext, useCont
 import { read, owrite, write, TweenVal } from './play'
 import { DragDecay, vec_transform_inverse_matrix } from './play'
 
-import { Solitaire as OSolitaire } from './gsolitaire'
-
 const Game = (props) => {
 
   return (<>
-      <Solitaire solitaire={props.solitaire}/>
+     <HeadsUp/>
     </>)
 }
 
+const HeadsUp = (props) => {
+  return (<>
+    
+      </>)
+}
 
 const Solitaire = (props) => {
 
