@@ -79,6 +79,8 @@ export default class Anim {
       }
     })
 
+    console.log(p0s, ps)
+    console.log(addeds, removeds, differents)
 
     this.front.a_diffs(addeds, removeds)
 

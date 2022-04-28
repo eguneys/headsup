@@ -31,7 +31,9 @@ export default class SSolitaire {
 
     if (res) {
       this._solitaire = res
-      this.on_front_updated?.()
+      setTimeout(() => {
+        this.on_front_updated?.()
+      })
     }
   }
 
