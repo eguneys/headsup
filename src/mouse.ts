@@ -39,6 +39,8 @@ export default class Mouse {
 
 
   _drag?: MouseDrag
+  _drag0?: MouseDrag
+  _drag1?: MouseDrag
   _drop0?: MouseDrag
 
   _hover?: NumberPair
@@ -66,6 +68,12 @@ export default class Mouse {
   get click() {
     if (!this._drag?.move && !!this._drag?.drop) {
       return this._drag.drop
+    }
+  }
+
+  get click_down() {
+    if (!this._drag0 && !!this._drag && !this._drag?.move && !this._drag?.drop) {
+      return this._drag.start
     }
   }
 
@@ -121,7 +129,7 @@ export default class Mouse {
 
     $canvas.addEventListener('mousedown', ev => {
       if (!this._drag) {
-        this._drag = {
+        this._drag1 = {
           button: ev.button,
           start: this.eventPosition(ev)
         }
@@ -160,7 +168,6 @@ export default class Mouse {
   }
 
   update(dt: number, dt0: number) {
-
     if (this._wheel0 === this._wheel) {
       this._wheel = 0
     } else {
@@ -176,13 +183,17 @@ export default class Mouse {
       }
       if (!this._drop0) {
         if (this._drag.drop) {
-          this._drag = undefined
+          this._drag1 = undefined
         }
       } else {
         this._drop0 = undefined
       }
     }
+
+
+    this._drag0 = this._drag
+    if (this._drag1 !== this._drag) {
+      this._drag = this._drag1
+    }
   }
-
-
 }

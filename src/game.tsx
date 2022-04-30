@@ -6,17 +6,133 @@ import { onCleanup, onMount, Show, For, on, createEffect, createContext, useCont
 import { read, owrite, write, TweenVal } from './play'
 import { DragDecay, vec_transform_inverse_matrix } from './play'
 
+
 const Game = (props) => {
 
   return (<>
-     <HeadsUp/>
+     <HeadsUp headsup={props.headsup}/>
     </>)
 }
 
 const HeadsUp = (props) => {
   return (<>
-    
+      <Background/>
+      <HeadsUpMiddle middle={props.headsup.middle}/>
+      <AllowedActions actions={props.headsup.allowed_actions}/>
+      <CurrentAction action={props.headsup.current_action}/>
+      <HasPosition x={244} y={106}>
+        <Pot pot_chips={props.headsup.pot_chips}/>
+      </HasPosition>
+      <For each={props.headsup.stacks}>{ stack =>
+        <HasPosition x={stack.x} y={stack.y}>
+          <Stack stack={stack} />
+        </HasPosition>
+      }</For>
       </>)
+}
+
+const Stack = (props) => {
+  return (<>
+      <Anim qs={[50, 16, 50, 13]}/> 
+      <HasPosition x={2} y={2}>
+        <Chips digits={read(props.stack.chips.digits)} />
+      </HasPosition>
+   </>)
+}
+
+const Chips = props => {
+  return (<>
+    <For each={props.digits}>{(digit,i) =>
+     <HasPosition x={1 + (8 - props.digits.length + i()+1)*4} y={0}>
+       <Anim qs={[120 + digit * 8, 48, 8, 7]}/> 
+     </HasPosition>
+    }</For>
+    <HasPosition x={10*4} y={0}>
+      <Anim qs={[120 + 10 * 8, 48, 8, 7]}/> 
+    </HasPosition>
+      </>)
+}
+
+const Pot = props => {
+  return (<>
+    <Anim qs={[100 + 7 * 49, 16, 49, 12]} y={-12}/>
+    <Anim qs={[0, 16, 50, 13]}/>
+    <HasPosition x={2} y={2}>
+      <Chips digits={read(props.pot_chips.digits)}/>
+    </HasPosition>
+    </>)
+}
+
+const CurrentAction = props => {
+
+  return (<>
+    <For each={read(props.action.actions)}>{ action =>
+      <HasPosition x={action.x} y={action.y}>
+        <TurnAction action={action}/>
+      </HasPosition>
+    }</For>
+      </>)
+}
+
+const TurnAction = (props) => {
+  return (<>
+
+        <TweenPosition x={0} iy={0} y={-12}>
+        <Anim qs={[100 + props.action.frame * 49, 16, 49, 12]}/>
+        </TweenPosition>
+        <Anim qs={[0, 16, 50, 13]}/>
+        <HasPosition x={2} y={2}>
+          <Chips digits={read(props.action.amount.digits)}/>
+        </HasPosition>
+        </>)
+}
+
+
+const AllowedActions = (props) => {
+ return (<>
+     <HasPosition x={20} y={160}>
+       <ActionButton action={props.actions.check} qs={[185, 32, 37, 14]}/>
+     </HasPosition>
+     <HasPosition x={20} y={160}>
+       <ActionButton action={props.actions.call} qs={[112, 32, 37, 14]}/>
+     </HasPosition>
+     <HasPosition x={20} y={140}>
+       <ActionButton action={props.actions.raise} qs={[37 * 2, 32, 37, 14]}/>
+     </HasPosition>
+     <HasPosition x={80} y={160}>
+       <ActionButton action={props.actions.fold} qs={[37 * 4, 32, 37, 14]}/>
+     </HasPosition>
+     <HasPosition x={80} y={140}>
+       <ActionButton action={props.actions.allin} qs={[37 * 1, 32, 37, 14]}/>
+     </HasPosition>
+   </>)
+}
+
+const ActionButton = props => {
+  return (<>
+      <Show when={props.action.allowed}>{ value => 
+      <>
+      <DropTarget onClickDown={props.action.on_click_down} onClick={props.action.on_click} qs={[0, 0, 37, 14]}/>
+      <Anim qs={[0, 32, 37, 14]}/>
+      <Anim qs={props.qs}/>
+      </>
+      }</Show>
+      </>)
+}
+
+const HeadsUpMiddle = props => {
+  return (<>
+      <For each={read(props.middle.hand2)}>{card =>
+      <HasPosition x={card.x} y={card.y}>
+      <CardHasPosition shadow={props.shadow} card={card}/>
+      </HasPosition>
+      }</For>
+      <For each={read(props.middle.hand)}>{card =>
+      <HasPosition x={card.x} y={card.y}>
+      <CardHasPosition shadow={props.shadow} card={card}/>
+      </HasPosition>
+      }</For>
+    </>)
 }
 
 const Solitaire = (props) => {
@@ -100,7 +216,7 @@ const CardHasPosition = (props) => {
 
 const RevealCard = (props) => {
   return (<>
-    <Anim qs={[90 + props.frame * 30, 48, 30, 40]}/>
+    <Anim qs={[90 + props.frame * 30, 96, 30, 40]}/>
     </>)
 }
 
@@ -108,10 +224,10 @@ const Card = (props) => {
 
   return (<>
       <DropTarget set_ref={props.set_ref} onDrag={props.onDrag} qs={[0, 48, 30, 40]}/>
-      <Anim qs={[60, 48, 30, 40]} x={props.shadow || 1} y={props.shadow || 1}/>
-      <Anim qs={[0, 48, 30, 40]}/>
-      <Anim qs={[0, 32, 6, 6]} x={22} y={2}/>
-      <Anim qs={[0, 16, 8, 6]} x={2} y={2}/>
+      <Anim qs={[60, 96, 30, 40]} x={props.shadow || 1} y={props.shadow || 1}/>
+      <Anim qs={[0, 96, 30, 40]}/>
+      <Anim qs={[0, 80, 6, 6]} x={22} y={2}/>
+      <Anim qs={[0, 64, 8, 6]} x={2} y={2}/>
       </>)
 }
 
@@ -123,21 +239,32 @@ export const DropTarget = (props) => {
 
   onMount(() => {
     props.set_ref?.(t_ref)
-    if (props.onDrag) {
-      t_ref.on_event = () => {
-        let { drag } = mouse()
+    t_ref.on_event = () => {
+      let { drag, click, click_down } = mouse()
 
-        if (drag && !drag.move0 && !drag.drop) {
-          let hit = vec_transform_inverse_matrix(Vec2.make(...drag.start), t_ref)
+      if (props.onDrag && drag && !drag.move0 && !drag.drop) {
+        let hit = vec_transform_inverse_matrix(Vec2.make(...drag.start), t_ref)
 
-          if (Math.floor(hit.x) === 0 && Math.floor(hit.y) === 0) {
+        if (Math.floor(hit.x) === 0 && Math.floor(hit.y) === 0) {
             let decay = DragDecay.make(drag, t_ref)
             return props.onDrag(decay)
-          }
         }
       }
+      if (props.onClick && click) {
+        let hit = vec_transform_inverse_matrix(Vec2.make(...click), t_ref)
+        if (Math.floor(hit.x) === 0 && Math.floor(hit.y) === 0) {
+          return props.onClick()
+        }
+      }
+
+      if (props.onClickDown && click_down) {
+        let hit = vec_transform_inverse_matrix(Vec2.make(...click_down), t_ref)
+        if (Math.floor(hit.x) === 0 && Math.floor(hit.y) === 0) {
+          return props.onClickDown()
+        } 
+      }
     }
- })
+  })
 
   return (<transform
           ref={t_ref}
@@ -250,9 +377,9 @@ const App = (anim, _render, _image, _root, $canvas) => {
          _render()
       }))
 
-    anim.set_front()
+    anim._set_front()
 
-    return (<Game solitaire={anim.front}/>)
+    return (<Game headsup={anim.front}/>)
   }
 
   return () => (<AppProvider $canvas={$canvas}> <_App/> </AppProvider>)

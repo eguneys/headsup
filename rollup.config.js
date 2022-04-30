@@ -15,7 +15,7 @@ let extensions = ['.ts', '.tsx']
 export default args => {
   let prod = args['config-prod']
   return {
-    input: 'src/main.ts',
+    input: prod ? 'src/boot' : 'src/dev-boot.ts',
     output: {
       format: 'iife', 
       name: 'Space',

@@ -1,3 +1,4 @@
+import { ticks } from './shared'
 import { batch, untrack, on, createMemo, createSignal, createEffect } from 'soli2d-js'
 import { useApp } from './app'
 import { read, write, owrite } from './play'
@@ -210,7 +211,7 @@ export class TweenVal {
 
 
   get value() {
-    return this._value()
+    return this._fvalue()
   }
 
   constructor(a: number,
@@ -224,9 +225,11 @@ export class TweenVal {
                 this.duration = duration
                 this.easing = easing
 
-                this._value = createMemo(() => {
+                this._value = () => {
                   return this.a * (1 - this.i) + this.b * this.i
-                })
+                }
+
+                this._fvalue = createMemo(() => Math.floor(this._value()))
 
                 let [{update}] = useApp()
 

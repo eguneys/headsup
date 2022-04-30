@@ -71,15 +71,6 @@ export class HasPositionCard extends HasPosition {
       this.i_reveal.resolve = PingPongVal.A
     }
 
-    /*
-    setTimeout(() => {
-      this.waiting()
-      setTimeout(() => {
-        this.card = 12
-      }, 800)
-    }, 2000)
-   */
-
     createEffect(on(this._card[0], (value?: OCard, prev_value?: OCard) => {
       if (!!prev_value && !value) {
         this.i_reveal.resolve = PingPongVal.A
@@ -158,7 +149,6 @@ export class Solitaire {
         }
       })
     })
-
     
     if (drag_pile) {
       this._drop_drag_pile(drag_pile.orig)
