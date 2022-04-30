@@ -33,7 +33,17 @@ const HeadsUp = (props) => {
 
 const Stack = (props) => {
   return (<>
+      
+      <Anim qs={[47 + 50 * props.stack.turn_frame, 5, 50, 11]} x={0} y={-11}/>
       <Anim qs={[50, 16, 50, 13]}/> 
+    <HasPosition y={-2}>
+      <Show when={props.stack.i_width}>{ value =>
+        <>
+        <Anim size={Vec2.make(50, 2)} qs={[466, 33, 1, 1]}/>
+        <Anim size={Vec2.make(value * 50, 2)} qs={[465, 33, 1, 1]}/>
+        </>
+      }</Show>
+    </HasPosition>
       <HasPosition x={2} y={2}>
         <Chips digits={read(props.stack.chips.digits)} />
       </HasPosition>
@@ -279,7 +289,7 @@ export const Anim = (props) => {
 
   return (<transform
           quad={Quad.make(image(), ...props.qs)}
-          size={Vec2.make(props.qs[2], props.qs[3])}
+          size={props.size || Vec2.make(props.qs[2], props.qs[3])}
           x={props.x}
           y={props.y}
           />)

@@ -105,7 +105,7 @@ export class HeadsUp {
 
 
     this.stacks = back.left_stacks.map((stack, i) =>
-                                  new Stack(this, stack, ...this.who_stack_pos(i+1)))
+      new Stack(this, Date.now() - 6000, stack, ...this.who_stack_pos(i+1)))
 
   }
 
@@ -158,14 +158,35 @@ class Stack extends HasPosition {
     this.chips.chips = stack
   }
 
+  get turn_frame() {
+    return this.left ? (this.left < 5000 ? Math.floor(this.left / ticks.half) % 2 : 0) : 1
+  }
+
+
+  get i_width() {
+    return 1 * this.initial_ratio + (1 - this.initial_ratio) * this.i_left?.i
+  }
+
+  get left() {
+    return this.i_left?.value
+  }
+
   chips: Chips
 
-  constructor(readonly headsup: HeadsUp, stack: number, x: number, y: number) {
+  i_left?: TweenVal
+  initial_ratio: number
+
+  constructor(readonly headsup: HeadsUp, start?: number, stack: number, x: number, y: number) {
 
     super(x, y)
 
     this.chips = new Chips(headsup, stack)
 
+    this.initial_ratio = (Date.now() - start) / 30000
+
+    if (start) {
+      this.i_left = new TweenVal((start + 30000) - Date.now(), 0, ticks.seconds * ((start + 30000 - Date.now())/1000))
+    }
   }
 }
 
