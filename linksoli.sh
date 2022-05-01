@@ -26,6 +26,7 @@ cd ..
 git clone https://github.com/eguneys/soli2d-js
 cd soli2d-js
 yarn install
+yarn link sol-expressions
 yarn build
 lerna exec yarn link
 cd ..

@@ -16,10 +16,11 @@ jobs:
           ./linksoli.sh
           yarn link cardstwo
           yarn link soli2d
+          yarn link babel-plugin-jsx-sol-expressions
           yarn link babel-preset-soli2d
           yarn link soli2d-js
           yarn install
-          yarn build
+          yarn prod
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4.2.5
