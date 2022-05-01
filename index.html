@@ -30,37 +30,11 @@ body {
   </head>
   <body>
     <div id='app'></div>
-    <div class='controls'>
-      <button id='get'>Get</button>
-      <button id='flop'>Deal Flop</button>
-      <button id='turn'>Deal Turn</button>
-      <button id='river'>Deal River</button>
-      <button id='collect'>Collect</button>
-    </div>
-    <div class='controls'>
-      <button id='hands'> Deal Hands </button>
-      <button id='hands_middle'> Deal Hands&Middle </button>
-    </div>
     <script>
-
-      function click(name, fn) { document.getElementById(name).addEventListener('click', fn) }
-
-      function init(api) {
-              click('get', () => api.set({ fen: '2c2d2h', fen0: '2c2d2h' }))
-              click('flop', () => api.set({ fen: 'ThJdKc', fen0: '' }))
-              click('turn', () => api.set({ fen: 'ThJdKcAs', fen0: 'ThJdKc' }))
-              click('river', () => api.set({ fen: 'ThJdKcAsAh', fen0: 'ThJdKcAs' }))
-              click('collect', () => api.set({ fen: '', fen0: 'ThJdKcAsAh' }))
-
-              click('hands', () => api.set({ fen: ' 2c2d ?c?c', fen0: '' }))
-              click('hands_middle', () => api.set({ fen: 'ThJdKcAsAh 2c2d ?c?c', fen0: ' 2c2d ?c?c' }))
-            }
-
-
       document.addEventListener('DOMContentLoaded', () => {
-              Space(document.getElementById('app'), { fen: '' }).then(init)
+              Space(document.getElementById('app'), {})
       })
     </script>
-  <script  src="main.min.js"></script>
+  <script  src="dev-boot.min.js"></script>
 </body>
 </html>
