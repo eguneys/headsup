@@ -4,6 +4,6 @@ export type Fen = string
 
 export type Config = {
   fen?: Fen
-  time?: number,
+  fold_after?: number,
   on_action?: (aww: ActionWithWho) => void
 }

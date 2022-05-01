@@ -14,12 +14,10 @@ function load_image(path: string): Promise<HTMLImageElement> {
 
 export default function app(element: HTMLElement, config?: Config) {
   return load_image(sprites_png).then(image => {
+      let anim = new Anim(config)
 
-    let anim = new Anim(config)
-
-    let [_render, root, $canvas] = Soli2d(element, image, 320, 180)
-    render(App(anim, _render, image, root, $canvas), root)
-
-    return anim
+      let [_render, root, $canvas] = Soli2d(element, image, 320, 180)
+      render(App(anim, _render, image, root, $canvas), root)
+      return anim
   })
 }

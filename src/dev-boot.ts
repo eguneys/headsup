@@ -1,27 +1,67 @@
 import { default as app } from './main'
-import { HeadsUpRound, ActionWithWho } from 'cardstwo'
+import { HeadsUpGame, HeadsUpRound, ActionWithWho, WhoHasAction } from 'cardstwo'
+import { random } from 'cardstwo'
 
+class Scheduler {
+  schedule(fn: () => void, ms: number) {
+    setTimeout(fn, ms)
+  }
+}
+
+const scheduler = new Scheduler()
 
 export default function main(element: HTMLElement) {
 
+  function json(game: HeadsUpGame, _pov: WhoHasAction) {
+    let pov = game.round.pov_of(_pov)
+    let {fold_after } = game
+
+    return {
+      fen: pov.fen,
+      fold_after
+    }
+  }
 
 
-  let hu = HeadsUpRound.make(2,
-                             10,
-  [100, 100])
+    function apply(aww: ActionWithWho) {
+      game.apply(aww)
+      let config = json(game, 1)
+      api.s_set_config(config)
+    }
 
-  let pov = hu.pov_of(1)
+
+    function ai(game: Game, _pov: WhoHasAction) {
+
+      let { fold_after } = game
+
+      let res = random(game.round.pov_of(_pov))
+
+      if (res) {
+        setTimeout(() => {
+          apply(res)
+        }, 500 + Math.random() * (fold_after - Date.now()) / 10)
+      }
+    }
+
+
+    function on_new_round() {
+      console.log('here')
+      console.log(game)
+    }
+
+  let game = HeadsUpGame.make(scheduler, on_new_round, 10)
+
   let api
 
   function on_action(aww: ActionWithWho) {
-    let ok = hu.maybe_add_action(aww)
-    let res = hu.pov_of(1)
-
-    api.s_set_back(res)
+    apply(aww)
+    ai(game, 2)
   }
 
-  app(element, { fen: pov.fen, on_action }).then(_api => {
+
+  app(element, { ...json(game, 1), on_action }).then(_api => {
     api = _api
+    ai(game, 2)
   })
 
 }

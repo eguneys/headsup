@@ -6,11 +6,12 @@ export default class Anim {
 
   front: GHeadsUp
   back: HeadsUpRoundPov
-  time?: number
+  fold_after?: number
 
   constructor(readonly config: Config) {
     let back = fen_headsup_round_pov(config.fen)
     this.back = back
+    this.fold_after = config.fold_after
   }
 
   g_action(aww: ActionWithWho) {
@@ -25,10 +26,13 @@ export default class Anim {
   }
 
   s_set_config(config: Config) {
-    let time0 = this.time
-    this.time = config.time
+    if (config.fen) {
+      this.s_set_back(fen_headsup_round_pov(config.fen))
+    }
+    let fold_after0 = this.fold_after
+    this.fold_after = config.fold_after
 
-    this.front.a_time(time0)
+    this.front.a_time(fold_after0)
   }
 
   _set_front() {

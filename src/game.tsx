@@ -388,7 +388,6 @@ const App = (anim, _render, _image, _root, $canvas) => {
       }))
 
     anim._set_front()
-
     return (<Game headsup={anim.front}/>)
   }
 

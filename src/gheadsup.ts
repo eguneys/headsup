@@ -1,5 +1,5 @@
 import { ticks } from './shared'
-import { createRoot, untrack, createMemo, onCleanup, on, batch, createSignal, createEffect } from 'soli2d-js'
+import { getOwner, runWithOwner, createRoot, untrack, createMemo, onCleanup, on, batch, createSignal, createEffect } from 'soli2d-js'
 import { Vec2 } from 'soli2d-js/web'
 import { vec_transform_inverse_matrix } from './play'
 import { read, write, owrite } from './play'
@@ -33,6 +33,9 @@ export function format_chips(chips: number) {
 
 export class HeadsUp {
   
+
+  owner: any
+
   middle: Middle
   allowed_actions: AllowedActions
 
@@ -49,6 +52,11 @@ export class HeadsUp {
     return who_stack_poss[this.who_diff(this.me, who)]
   }
 
+  get fold_after() {
+    return this.anim.fold_after
+  }
+
+
   get back() {
     return this.anim.back
   }
@@ -61,11 +69,24 @@ export class HeadsUp {
     return this.back.who
   }
 
+  get current_who() {
+    return this.back.current_who
+  }
+
   get pot() {
     return this.back.pot
   }
+
+
+  get current_stack() {
+    return this.stacks[this.current_who - 1]
+  }
   
   constructor(readonly anim: Anim) {
+
+    this.owner = getOwner()
+
+
     let { back } = this
     let hand = back.middle.hand.map(_ => 
                                     new HasPositionCard(0, 0, _))
@@ -105,12 +126,34 @@ export class HeadsUp {
 
 
     this.stacks = back.left_stacks.map((stack, i) =>
-      new Stack(this, Date.now() - 6000, stack, ...this.who_stack_pos(i+1)))
+      new Stack(this, this.current_who === (i + 1) ? 
+                this.anim.fold_after: undefined, 
+      stack, ...this.who_stack_pos(i+1)))
 
   }
 
-  a_diff(back0: HeadsUpRoundPov) {
 
+  a_wrap(fn: () => void) {
+    return () => {
+      runWithOwner(this.owner, fn)
+    }
+  }
+
+  a_time = this.a_wrap((fold_after0: number) => {
+    let { back, fold_after } = this
+
+    this.stacks.forEach(stack => {
+      if (stack === this.current_stack) {
+        stack.fold_after = fold_after
+      } else {
+        stack.fold_after = undefined
+      }
+    })
+
+
+  })
+
+  a_diff = this.a_wrap((back0: HeadsUpRoundPov) => {
     let { back } = this.anim
 
     let allowed_actions = back.allowed_actions
@@ -135,8 +178,9 @@ export class HeadsUp {
     .map((aww, i) =>
            new ActionHasPos(this, aww)).slice(-2)
 
-
-           actions[0] = actions0[1]
+           if (actions.length > 1) {
+             actions[0] = actions0[1]
+           }
 
     owrite(this.current_action.actions, actions)
 
@@ -144,7 +188,7 @@ export class HeadsUp {
                         this.stacks[i].stack = stack)
 
 
-  }
+  })
 
   action(aww: ActionWithWho) {
     this.anim.g_action(aww)
@@ -159,34 +203,47 @@ class Stack extends HasPosition {
   }
 
   get turn_frame() {
-    return this.left ? (this.left < 5000 ? Math.floor(this.left / ticks.half) % 2 : 0) : 1
+    return this.left ? (this.left < 5000 ? Math.floor(this.left / ticks.half) % 2 : 1) : 0
   }
 
 
   get i_width() {
-    return 1 * this.initial_ratio + (1 - this.initial_ratio) * this.i_left?.i
+    let i = read(this.i_left)?.i
+
+    return i ?? 1 * (1 - this.left_ratio) + this.left_ratio * i
   }
 
   get left() {
-    return this.i_left?.value
+    return read(this.i_left)?.value
+  }
+
+  set fold_after(fold_after?: number) {
+    if (fold_after) {
+      owrite(this.i_left, new TweenVal(fold_after - Date.now(), 0, ticks.seconds * ((fold_after - Date.now())/1000)))
+      this.left_ratio = (fold_after - Date.now()) / 35000
+    } else {
+      owrite(this.i_left, undefined)
+    }
   }
 
   chips: Chips
 
-  i_left?: TweenVal
-  initial_ratio: number
+  i_left: Signal<TweenVal | undefined>
+  left_ratio: number
 
-  constructor(readonly headsup: HeadsUp, start?: number, stack: number, x: number, y: number) {
+  constructor(readonly headsup: HeadsUp, fold_after?: number, stack: number, x: number, y: number) {
 
     super(x, y)
 
     this.chips = new Chips(headsup, stack)
 
-    this.initial_ratio = (Date.now() - start) / 30000
+    this.left_ratio = (fold_after - Date.now()) / 35000
 
-    if (start) {
-      this.i_left = new TweenVal((start + 30000) - Date.now(), 0, ticks.seconds * ((start + 30000 - Date.now())/1000))
+    let i_left
+    if (fold_after) {
+       i_left = new TweenVal(fold_after - Date.now(), 0, ticks.seconds * ((fold_after - Date.now())/1000))
     }
+    this.i_left = createSignal(i_left)
   }
 }
 
