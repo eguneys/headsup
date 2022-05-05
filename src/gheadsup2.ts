@@ -1,11 +1,11 @@
 import { ticks } from './shared'
 
-import { createMemo, on, createSignal, createEffect } from 'soli2d-js'
+import { mapArray, createMemo, on, createSignal, createEffect } from 'soli2d-js'
 import { read, write, owrite } from './play'
 
 import { TweenVal } from './lerps'
 
-import { WhoHasAction, aww_action_type, aww_who, Check, Call, Fold, Raise, AllIn, BigBlind, SmallBlind } from 'cardstwo'
+import { WhoHasAction, aww_action_type, aww_ontop, aww_who, Check, Call, Fold, Raise, AllIn, BigBlind, SmallBlind } from 'cardstwo'
 
 
 export type Chips = Array<number>
@@ -32,7 +32,12 @@ export function who_stack_pos(me: WhoHasAction, who: WhoHasAction) {
   return who_stack_poss[who_diff(me, who)]
 }
 
+const who_action_poss = [[200, 140], [200, 50]]
+export function who_action_pos(me: WhoHasAction, who: WhoHasAction) {
+  return who_action_poss[who_diff(me, who)]
+}
 
+const aww_action_type_frames = [0, 1, 2, 3, 4, 5, 6]
 
 export class HeadsUp {
 
@@ -49,6 +54,8 @@ export class HeadsUp {
   m_allow_fold: Memo<ActionWithWho>
   m_allow_raise: Memo<ActionWithWho>
   m_allow_allin: Memo<ActionWithWho>
+
+  m_actions: Memo<Array<CurrentAction>>
 
   get on_action() {
     return read(this._on_action)
@@ -88,21 +95,39 @@ export class HeadsUp {
       return read(this._pov).allowed_actions.filter(_ => aww_who(_) === this.m_who())
     })
 
-    this.m_allow_allin = createMemo(() => {
-      return my_actions().find(_ =>
-                               aww_action_type(_) === AllIn)
+    this.m_allow_allin = createMemo(() =>
+      my_actions().find(_ =>
+        aww_action_type(_) === AllIn)
+    )
+
+    this.m_allow_check = createMemo(() =>
+      my_actions().find(_ =>
+        aww_action_type(_) === Check)
+    )
+
+    this.m_allow_call = createMemo(() =>
+      my_actions().find(_ =>
+        aww_action_type(_) === Call)
+    )
+
+    this.current_actions = createMemo(() =>
+      read(this._pov).current_action.actions
+    )
+
+    this.last_current_actions = createMemo(() => {
+      let actions = this.current_actions()
+
+      let res = new Map<WhoHasAction, ActionWithWho>()
+
+      actions.forEach(action =>
+        res.set(aww_who(action), action))
+
+      return [...res.values()]
     })
 
-    this.m_allow_check = createMemo(() => {
-      return my_actions().find(_ =>
-                               aww_action_type(_) === Check)
-    })
-
-    this.m_allow_call = createMemo(() => {
-      return my_actions().find(_ =>
-                               aww_action_type(_) === Call)
-    })
-
+    this.m_actions = createMemo(mapArray(
+      this.last_current_actions,
+      _ => make_current_action(_, ...who_action_pos(this.m_me(), aww_who(_)))))
   }
 
 
@@ -111,6 +136,17 @@ export class HeadsUp {
   }
 }
 
+const make_current_action = (aww: ActionWithWho, x: number, y: number) => {
+  let amount = format_chips(aww_ontop(aww))
+  let frame = aww_action_type_frames[aww_action_type(aww)-1]
+
+  return {
+    x,
+    y,
+    amount,
+    frame
+  }
+}
 
 const make_stack = (chips: number, fold_after: Timestamp | undefined, x: number, y: number) => {
 

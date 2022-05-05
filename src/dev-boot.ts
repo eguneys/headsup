@@ -45,8 +45,8 @@ export default function main(element: HTMLElement) {
 
 
     function on_new_round() {
-      console.log('here')
-      console.log(game)
+      let config = json(game, 1)
+      api.s_set_config(config)
     }
 
   let game = HeadsUpGame.make(scheduler, on_new_round, 10)

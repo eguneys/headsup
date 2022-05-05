@@ -1,6 +1,7 @@
 import { HeadsUp as GHeadsUp } from './gheadsup2'
 import { fen_headsup_round_pov, HeadsUpRoundPov } from 'cardstwo'
 import { same } from './util'
+import { aww_who } from 'cardstwo'
 
 import { createEffect } from 'soli2d-js'
 
@@ -32,6 +33,7 @@ export default class Anim {
       this.s_set_back(fen_headsup_round_pov(config.fen))
     }
     this.fold_after = config.fold_after
+    console.log(this.back.current_who, this.back.allowed_actions.map(aww_who))
 
     this.front.fold_after = this.fold_after
   }

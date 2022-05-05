@@ -28,6 +28,11 @@ return (<>
         <Stack stack={stack}/>
       </HasPosition>
     }</For>
+    <For each={props.headsup.m_actions()}>{ action =>
+      <HasPosition x={action.x} y={action.y}>
+        <TurnAction action={action}/>
+      </HasPosition>
+    }</For>
     </>)
 }
 
@@ -110,13 +115,12 @@ const CurrentAction = props => {
 
 const TurnAction = (props) => {
   return (<>
-
         <TweenPosition x={0} iy={0} y={-12}>
         <Anim qs={[100 + props.action.frame * 49, 16, 49, 12]}/>
         </TweenPosition>
         <Anim qs={[0, 16, 50, 13]}/>
         <HasPosition x={2} y={2}>
-          <Chips digits={read(props.action.amount.digits)}/>
+          <Chips digits={props.action.amount}/>
         </HasPosition>
         </>)
 }
