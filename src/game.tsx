@@ -8,13 +8,37 @@ import { DragDecay, vec_transform_inverse_matrix } from './play'
 
 
 const Game = (props) => {
+  return (<>
+      <HeadsUp headsup={props.headsup}/>
+      </>)
+}
+
+
+const HeadsUp = (props) => {
+return (<>
+    <Background/>
+    <HasPosition x={80} y={160}>
+      <ActionButton qs={[37 * 1, 32, 37, 14]} on_click={props.headsup.click_action} action={props.headsup.m_allow_allin()}/>
+    </HasPosition>
+    <HasPosition x={20} y={160}>
+      <ActionButton qs={[112, 32, 37, 14]}  on_click={props.headsup.click_action} action={props.headsup.m_allow_call()}/>
+    </HasPosition>
+    <For each={props.headsup.m_stacks()}>{ stack =>
+      <HasPosition x={stack.x} y={stack.y}>
+        <Stack stack={stack}/>
+      </HasPosition>
+    }</For>
+    </>)
+}
+
+const GameOld = (props) => {
 
   return (<>
      <HeadsUp headsup={props.headsup}/>
     </>)
 }
 
-const HeadsUp = (props) => {
+const HeadsUpOld = (props) => {
   return (<>
       <Background/>
       <HeadsUpMiddle middle={props.headsup.middle}/>
@@ -34,10 +58,10 @@ const HeadsUp = (props) => {
 const Stack = (props) => {
   return (<>
       
-      <Anim qs={[47 + 50 * props.stack.turn_frame, 5, 50, 11]} x={0} y={-11}/>
+      <Anim qs={[47 + 50 * props.stack.turn_frame(), 5, 50, 11]} x={0} y={-11}/>
       <Anim qs={[50, 16, 50, 13]}/> 
     <HasPosition y={-2}>
-      <Show when={props.stack.i_width}>{ value =>
+      <Show when={props.stack.i_width()}>{ value =>
         <>
         <Anim size={Vec2.make(50, 2)} qs={[466, 33, 1, 1]}/>
         <Anim size={Vec2.make(value * 50, 2)} qs={[465, 33, 1, 1]}/>
@@ -45,7 +69,7 @@ const Stack = (props) => {
       }</Show>
     </HasPosition>
       <HasPosition x={2} y={2}>
-        <Chips digits={read(props.stack.chips.digits)} />
+        <Chips digits={props.stack.chips} />
       </HasPosition>
    </>)
 }
@@ -120,9 +144,9 @@ const AllowedActions = (props) => {
 
 const ActionButton = props => {
   return (<>
-      <Show when={props.action.allowed}>{ value => 
+      <Show when={props.action}>{ value => 
       <>
-      <DropTarget onClickDown={props.action.on_click_down} onClick={props.action.on_click} qs={[0, 0, 37, 14]}/>
+      <DropTarget onClick={_ => props.on_click(value)} qs={[0, 0, 37, 14]}/>
       <Anim qs={[0, 32, 37, 14]}/>
       <Anim qs={props.qs}/>
       </>

@@ -1,6 +1,8 @@
-import { HeadsUp as GHeadsUp } from './gheadsup'
+import { HeadsUp as GHeadsUp } from './gheadsup2'
 import { fen_headsup_round_pov, HeadsUpRoundPov } from 'cardstwo'
 import { same } from './util'
+
+import { createEffect } from 'soli2d-js'
 
 export default class Anim {
 
@@ -22,21 +24,28 @@ export default class Anim {
     let back0 = this.back
     this.back = back
 
-    this.front.a_diff(back0)
+    this.front.pov = this.back
   }
 
   s_set_config(config: Config) {
     if (config.fen) {
       this.s_set_back(fen_headsup_round_pov(config.fen))
     }
-    let fold_after0 = this.fold_after
     this.fold_after = config.fold_after
 
-    this.front.a_time(fold_after0)
+    this.front.fold_after = this.fold_after
   }
 
   _set_front() {
-    this.front = new GHeadsUp(this)
+    this.front = new GHeadsUp(this.back, this.fold_after)
+
+    createEffect(() => {
+      let action = this.front.on_action
+
+      if (action) {
+        this.g_action(action)
+      }
+    })
   }
 
 }
