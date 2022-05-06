@@ -83,11 +83,19 @@ export class HeadsUp {
     this.m_me = createMemo(() => read(this._pov).who)
     this.m_who = createMemo(() => read(this._pov).who)
 
+    this.showdown = createMemo(() => read(this._pov).showdown)
+
+    let fold_after_not_on_showdown = () => {
+      if (!this.showdown()) {
+        return read(this._fold_after)
+      }
+    }
+
     this.m_stacks = createMemo(() => read(this._pov)
                                .left_stacks
                                .map((_, i) => 
                                     make_stack(_,
-                                               this.m_current_who() === i+1 ? read(this._fold_after)
+                                               this.m_current_who() === i+1 ? fold_after_not_on_showdown()
                                                : undefined,
                                                ...who_stack_pos(this.m_me(), i+1))))
 
@@ -135,11 +143,68 @@ export class HeadsUp {
     this.m_actions = createMemo(mapArray(
       this.last_current_actions,
       _ => make_current_action(_, ...who_action_pos(this.m_me(), aww_who(_)))))
+
+
+    let m_pot = createMemo(() => read(this._pov).pot)
+
+    this.m_pot = () => format_chips(m_pot())
+
+    this.m_hand = createMemo(mapArray(
+      () => read(this._pov).middle.hand,
+        (_, i) => make_card(_, 131+i()*32, 140)))
+
+
+    this.m_hand2 = createMemo(mapArray(
+      () => read(this._pov).middle.hand2,
+        (_, i) => make_card(_, 131, i()*32, 60)))
+
+
+    this.m_flop = createMemo(mapArray(
+      () => read(this._pov).middle.flop,
+        (_, i) => make_card(_, 10 + i() * 33, 76)))
+
+
+    let m_turn_array = createMemo(mapArray(
+      () => {
+        let res = read(this._pov).middle.turn
+        if (res) {
+          return [res]
+        }
+      },
+        (_, i) => make_card(_, 10 + 3 * 33 + 3, 76)))
+
+    this.m_turn = () => m_turn_array()[0]
+
+
+    let m_river_array = createMemo(mapArray(
+      () => {
+        let res = read(this._pov).middle.river
+        if (res) {
+          return [res]
+        }
+      },
+        (_, i) => make_card(_, 10 + 4 * 33 + 3, 76)))
+
+    this.m_river = () => m_river_array()[0]
   }
 
 
   click_action = (aww: ActionWithWho) => {
     owrite(this._on_action, aww)
+  }
+}
+
+const make_card = (card: OCard, x: number, y: number) => {
+
+  let _reveal = new TweenVal(0, 1, ticks.half)
+
+  let reveal_frame = () => _reveal.i
+
+  return {
+    x,
+    y,
+    reveal_frame,
+    card
   }
 }
 

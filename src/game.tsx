@@ -17,19 +17,87 @@ const Game = (props) => {
 const HeadsUp = (props) => {
 return (<>
     <Background/>
+    <HasPosition x={244} y={105}>
+      <Pot pot={props.headsup.m_pot()}/>
+    </HasPosition>
     <HasPosition x={80} y={160}>
       <ActionButton qs={[37 * 4, 32, 37, 14]} on_click={props.headsup.click_action} action={props.headsup.m_allow_fold()}/>
     </HasPosition>
     <HasPosition x={20} y={160}>
       <ActionButton qs={[185, 32, 37, 14]} on_click={props.headsup.click_action} action={props.headsup.m_allow_check()}/>
     </HasPosition>
-
+    <HasPosition x={20} y={160}>
+      <ActionButton qs={[112, 32, 37, 14]} on_click={props.headsup.click_action} action={props.headsup.m_allow_call()}/>
+    </HasPosition>
     <HasPosition x={80} y={140}>
       <ActionButton qs={[37 * 1, 32, 37, 14]} on_click={props.headsup.click_action} action={props.headsup.m_allow_allin()}/>
     </HasPosition>
     <HasPosition x={20} y={160}>
       <ActionButton qs={[112, 32, 37, 14]}  on_click={props.headsup.click_action} action={props.headsup.m_allow_call()}/>
     </HasPosition>
+    <Show when={props.headsup.m_hand2().length === 2}
+    fallback={
+      <Show when={props.headsup.m_hand()}>
+        <For each={[1,2]}>{ (hand, i) =>
+          <HasPosition x={131+i() * 32} y={19}>
+            <BackCard/>
+          </HasPosition>
+        }</For>
+      </Show>
+    }
+    >
+      <For each={props.headsup.m_hand2()}>{ (hand, i) =>
+       <HasPosition x={131 + i()*32} y={40}>
+          <Show when={hand.reveal_frame()<1}
+            fallback={
+             <Card card={hand.card}/>
+          } >
+            <RevealCard frame={Math.floor(hand.reveal_frame()*5)}/>
+          </Show>
+       </HasPosition> 
+      }</For>
+    </Show>
+    <For each={props.headsup.m_hand()}>{ (hand) =>
+      <HasPosition x={hand.x} y={hand.y}>
+        <Show when={hand.reveal_frame()<1}
+          fallback={
+           <Card card={hand.card}/>
+        } >
+          <RevealCard frame={Math.floor(hand.reveal_frame()*5)}/>
+        </Show>
+      </HasPosition>
+    }</For>
+    <Show when={props.headsup.m_turn()}>{ card =>
+      <HasPosition x={card.x} y={card.y}>
+        <Show when={card.reveal_frame()<1}
+      fallback={
+        <Card card={card.card}/>
+      } >
+        <RevealCard frame={Math.floor(card.reveal_frame()*5)}/>
+        </Show>
+      </HasPosition>
+    }</Show>
+    <Show when={props.headsup.m_river()}>{ card =>
+      <HasPosition x={card.x} y={card.y}>
+        <Show when={card.reveal_frame()<1}
+      fallback={
+        <Card card={card.card}/>
+      } >
+        <RevealCard frame={Math.floor(card.reveal_frame()*5)}/>
+        </Show>
+      </HasPosition>
+    }</Show>
+
+    <For each={props.headsup.m_flop()}>{ card =>
+      <HasPosition x={card.x} y={card.y}>
+         <Show when={card.reveal_frame()<1}
+          fallback={
+           <Card card={card.card}/>
+        } >
+          <RevealCard frame={Math.floor(card.reveal_frame()*5)}/>
+        </Show>
+      </HasPosition>
+    }</For>
     <For each={props.headsup.m_stacks()}>{ stack =>
       <HasPosition x={stack.x} y={stack.y}>
         <Stack stack={stack}/>
@@ -104,7 +172,7 @@ const Pot = props => {
     <Anim qs={[100 + 7 * 49, 16, 49, 12]} y={-12}/>
     <Anim qs={[0, 16, 50, 13]}/>
     <HasPosition x={2} y={2}>
-      <Chips digits={read(props.pot_chips.digits)}/>
+      <Chips digits={props.pot}/>
     </HasPosition>
     </>)
 }
@@ -243,8 +311,7 @@ const CardStack = props => {
 
 const BackCard = (props) => {
   return (<>
-      <Anim qs={[60, 48, 30, 40]} x={1} y={1}/>
-      <Anim qs={[30, 48, 30, 40]}/>
+      <Anim qs={[90, 96, 30, 40]}/>
       </>)
 }
 
