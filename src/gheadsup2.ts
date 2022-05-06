@@ -74,7 +74,7 @@ export class HeadsUp {
   }
 
   constructor(pov: HeadsUpRoundPov, fold_after: Timestamp) {
-    this._on_action = createSignal()
+    this._on_action = createSignal(undefined, { equals: false })
     this._fold_after = createSignal(fold_after)
     this._pov = createSignal(pov)
 
@@ -95,6 +95,7 @@ export class HeadsUp {
       return read(this._pov).allowed_actions.filter(_ => aww_who(_) === this.m_who())
     })
 
+
     this.m_allow_allin = createMemo(() =>
       my_actions().find(_ =>
         aww_action_type(_) === AllIn)
@@ -109,6 +110,12 @@ export class HeadsUp {
       my_actions().find(_ =>
         aww_action_type(_) === Call)
     )
+
+    this.m_allow_fold = createMemo(() =>
+      my_actions().find(_ =>
+        aww_action_type(_) === Fold)
+    )
+
 
     this.current_actions = createMemo(() =>
       read(this._pov).current_action.actions

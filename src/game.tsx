@@ -18,6 +18,13 @@ const HeadsUp = (props) => {
 return (<>
     <Background/>
     <HasPosition x={80} y={160}>
+      <ActionButton qs={[37 * 4, 32, 37, 14]} on_click={props.headsup.click_action} action={props.headsup.m_allow_fold()}/>
+    </HasPosition>
+    <HasPosition x={20} y={160}>
+      <ActionButton qs={[185, 32, 37, 14]} on_click={props.headsup.click_action} action={props.headsup.m_allow_check()}/>
+    </HasPosition>
+
+    <HasPosition x={80} y={140}>
       <ActionButton qs={[37 * 1, 32, 37, 14]} on_click={props.headsup.click_action} action={props.headsup.m_allow_allin()}/>
     </HasPosition>
     <HasPosition x={20} y={160}>

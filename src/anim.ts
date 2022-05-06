@@ -31,10 +31,9 @@ export default class Anim {
   s_set_config(config: Config) {
     if (config.fen) {
       this.s_set_back(fen_headsup_round_pov(config.fen))
+      console.log(config.fen, fen_headsup_round_pov(config.fen).left_stacks)
     }
-    console.log(config.fen, this.back.allowed_actions.map(aww_action_type), this.back.allowed_actions.map(aww_ontop))
     this.fold_after = config.fold_after
-    console.log(this.back.current_who, this.back.allowed_actions.map(aww_who))
 
     this.front.fold_after = this.fold_after
   }
