@@ -5,7 +5,7 @@ import { read, write, owrite } from './play'
 
 import { TweenVal } from './lerps'
 
-import { WhoHasAction, aww_action_type, who_next, aww_ontop, aww_who, Check, Call, Fold, Raise, AllIn, BigBlind, SmallBlind } from 'cardstwo'
+import { whos, WhoHasAction, aww_action_type, who_next, aww_ontop, aww_who, Check, Call, Fold, Raise, AllIn, BigBlind, SmallBlind } from 'cardstwo'
 import { card_rank, card_suit } from 'cardstwo'
 
 
@@ -147,7 +147,6 @@ export class HeadsUp {
       () => read(this._pov).middle.hand2,
         (_, i) => make_card(_, 131, i()*32, 60)))
 
-
     this.m_flop = createMemo(mapArray(
       () => read(this._pov).middle.flop,
         (_, i) => make_card(_, 10 + i() * 33, 76)))
@@ -201,56 +200,63 @@ export class HeadsUp {
                                    m_show_flop() ? (!!this.m_turn() ? 0 : ticks.seconds) : undefined),
       m_show_river = create_delayed(m_showdown_river, () =>
                                    m_show_turn() ? (!!this.m_river() ? 0 : ticks.seconds) : undefined)
-      this.m_show_hand2 = () =>
+      this.m_show_hand2 = createMemo(() =>
         m_show_hand2()?.map((_, i) =>
           make_card(_, 131 + i * 32, 19)
-        )
+        ))
       
-      this.m_show_flop = () =>
+      this.m_show_flop = createMemo(() =>
       m_show_flop()?.map((_, i) =>
-                         make_card(_, 10 + i * 33, 76))
+                         make_card(_, 10 + i * 33, 76)))
 
-      this.m_show_turn = () => {
+      this.m_show_turn = createMemo(() => {
         let _ = m_show_turn()
         if (_) {
           return make_card(_, 10 + 3 * 33 + 3, 76)
         }
-      }
-      this.m_show_river = () => {
+      })
+      this.m_show_river = createMemo(() => {
         let _ = m_show_river()
         if (_) {
           return make_card(_, 10 + 4 * 33 + 3, 76)
         }
-      }
+      })
 
-      let m_show_middle_all = () => {
-
+      let m_show_middle_all = createMemo(() => {
         let river = this.m_show_river()
         if (river) {
           return [...this.m_show_flop(), this.m_show_turn(), river]
         }
-      }
+      })
 
-    let m_winner_hands = () => {
+    let m_winner_hands = createMemo(() => {
       return m_showdown()?.winner_hands
-    }
+    })
 
-    createEffect(() => {
+    let m_hands_by_who = createMemo(() => 
+             new Map(whos.map(who =>
+                              [who, [this.m_hand(),
+                                this.m_show_hand2()][who_diff(this.m_me(), who)]])))
+
+
+    createEffect(on(m_show_middle_all, () => {
       let middle = m_show_middle_all()
       if (middle) {
         m_winner_hands()?.forEach(([who, [hv, hand]]) => {
-          let _hand = hand.slice(0)
-          middle.forEach(m => {
+          let m_hands = m_hands_by_who().get(who)!
+
+          console.log(who, [...middle, ...m_hands].map(_ => card_rank(_.card)), hand.map(card_rank))
+          let _hand = hand.slice(0, 5);
+          [...middle, ...m_hands].forEach(m => {
+            console.log(_hand, m.card, _hand.includes(m.card))
             if (_hand.includes(m.card)) {
               _hand.splice(_hand.indexOf(m.card), 1)
-              untrack(() => {
-                m.elevate()
-              })
+              m.elevate()
             }
           })
         })
       }
-    })
+    }))
 
     let m_left_stacks = createMemo(() => read(this._pov)
                                  .left_stacks)
@@ -291,7 +297,7 @@ export class HeadsUp {
 
 const make_card = (card: OCard, x: number, y: number) => {
 
-  let _y = new TweenVal(y, y, ticks.seconds)
+  let _y = new TweenVal(y, y, ticks.seconds, TweenVal.quad_in_out)
   let _reveal = new TweenVal(0, 1, ticks.half)
 
   let reveal_frame = () => _reveal.i
