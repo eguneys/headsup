@@ -6,6 +6,7 @@ import { read, write, owrite } from './play'
 import { TweenVal } from './lerps'
 
 import { WhoHasAction, aww_action_type, who_next, aww_ontop, aww_who, Check, Call, Fold, Raise, AllIn, BigBlind, SmallBlind } from 'cardstwo'
+import { card_rank, card_suit } from 'cardstwo'
 
 
 export type Chips = Array<number>
@@ -264,11 +265,15 @@ const make_card = (card: OCard, x: number, y: number) => {
 
   let reveal_frame = () => _reveal.i
 
+  let rank = () => card_rank(card)
+  let suit = () => card_suit(card)
+
   return {
     x,
     y,
     reveal_frame,
-    card
+    rank,
+    suit
   }
 }
 

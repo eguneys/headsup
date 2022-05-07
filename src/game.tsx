@@ -66,45 +66,16 @@ return (<>
       <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/>
     }</Show>
     <For each={props.headsup.m_hand()}>{ (hand) =>
-      <HasPosition x={hand.x} y={hand.y}>
-        <Show when={hand.reveal_frame()<1}
-          fallback={
-           <Card card={hand.card}/>
-        } >
-          <RevealCard frame={Math.floor(hand.reveal_frame()*5)}/>
-        </Show>
-      </HasPosition>
+     <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
     }</For>
-    <Show when={props.headsup.m_turn()}>{ card =>
-      <HasPosition x={card.x} y={card.y}>
-        <Show when={card.reveal_frame()<1}
-      fallback={
-        <Card card={card.card}/>
-      } >
-        <RevealCard frame={Math.floor(card.reveal_frame()*5)}/>
-        </Show>
-      </HasPosition>
+    <Show when={props.headsup.m_turn()}>{ hand =>
+     <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
     }</Show>
-    <Show when={props.headsup.m_river()}>{ card =>
-      <HasPosition x={card.x} y={card.y}>
-        <Show when={card.reveal_frame()<1}
-      fallback={
-        <Card card={card.card}/>
-      } >
-        <RevealCard frame={Math.floor(card.reveal_frame()*5)}/>
-        </Show>
-      </HasPosition>
+    <Show when={props.headsup.m_river()}>{ hand =>
+     <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
     }</Show>
-
-    <For each={props.headsup.m_flop()}>{ card =>
-      <HasPosition x={card.x} y={card.y}>
-         <Show when={card.reveal_frame()<1}
-          fallback={
-           <Card card={card.card}/>
-        } >
-          <RevealCard frame={Math.floor(card.reveal_frame()*5)}/>
-        </Show>
-      </HasPosition>
+    <For each={props.headsup.m_flop()}>{ hand =>
+     <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
     }</For>
     <For each={props.headsup.m_stacks()}>{ stack =>
       <HasPosition x={stack.x} y={stack.y}>
@@ -123,7 +94,7 @@ const CardWithRevealHasPosition = (props) => {
   return (<HasPosition x={props.x} y={props.y}>
     <Show when={props.hand.reveal_frame()<1}
       fallback={
-        <Card card={props.hand.card}/>
+        <Card rank={props.hand.rank()} suit={props.hand.suit()}/>
       } >
       <RevealCard frame={Math.floor(props.hand.reveal_frame()*5)}/>
     </Show>
@@ -353,12 +324,13 @@ const RevealCard = (props) => {
 
 const Card = (props) => {
 
+  let color = props.suit % 2
   return (<>
       <DropTarget set_ref={props.set_ref} onDrag={props.onDrag} qs={[0, 48, 30, 40]}/>
       <Anim qs={[60, 96, 30, 40]} x={props.shadow || 1} y={props.shadow || 1}/>
       <Anim qs={[0, 96, 30, 40]}/>
-      <Anim qs={[0, 80, 6, 6]} x={22} y={2}/>
-      <Anim qs={[0, 64, 8, 6]} x={2} y={2}/>
+      <Anim qs={[0 + (props.suit - 1) * 6, 80 + color * 6, 6, 6]} x={22} y={2}/>
+      <Anim qs={[0 + (props.rank - 1) * 8, 64 + color * 6, 8, 6]} x={2} y={2}/>
       </>)
 }
 
