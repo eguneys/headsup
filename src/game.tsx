@@ -35,7 +35,13 @@ return (<>
     <HasPosition x={20} y={160}>
       <ActionButton qs={[112, 32, 37, 14]}  on_click={props.headsup.click_action} action={props.headsup.m_allow_call()}/>
     </HasPosition>
-    <Show when={props.headsup.m_hand2().length === 2}
+    <HasPosition x={20} y={140}>
+      <ActionButton qs={[37*2, 32, 37, 14]}  on_click={props.headsup.click_action} action={props.headsup.m_allow_raise()}/>
+    </HasPosition>
+
+
+
+    <Show when={props.headsup.m_show_hand2()}
     fallback={
       <Show when={props.headsup.m_hand()}>
         <For each={[1,2]}>{ (hand, i) =>
@@ -45,18 +51,20 @@ return (<>
         }</For>
       </Show>
     }
-    >
-      <For each={props.headsup.m_hand2()}>{ (hand, i) =>
-       <HasPosition x={131 + i()*32} y={40}>
-          <Show when={hand.reveal_frame()<1}
-            fallback={
-             <Card card={hand.card}/>
-          } >
-            <RevealCard frame={Math.floor(hand.reveal_frame()*5)}/>
-          </Show>
-       </HasPosition> 
+    >{ value =>
+      <For each={value}>{ (hand, i) =>
+        <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/>
       }</For>
-    </Show>
+    }</Show>
+    <For each={props.headsup.m_show_flop()}>{ hand =>
+      <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/>
+    }</For>
+    <Show when={props.headsup.m_show_turn()}>{ hand =>
+      <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/>
+    }</Show>
+    <Show when={props.headsup.m_show_river()}>{ hand =>
+      <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/>
+    }</Show>
     <For each={props.headsup.m_hand()}>{ (hand) =>
       <HasPosition x={hand.x} y={hand.y}>
         <Show when={hand.reveal_frame()<1}
@@ -109,6 +117,17 @@ return (<>
       </HasPosition>
     }</For>
     </>)
+}
+
+const CardWithRevealHasPosition = (props) => {
+  return (<HasPosition x={props.x} y={props.y}>
+    <Show when={props.hand.reveal_frame()<1}
+      fallback={
+        <Card card={props.hand.card}/>
+      } >
+      <RevealCard frame={Math.floor(props.hand.reveal_frame()*5)}/>
+    </Show>
+  </HasPosition> )
 }
 
 const GameOld = (props) => {

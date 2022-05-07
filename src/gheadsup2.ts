@@ -5,7 +5,7 @@ import { read, write, owrite } from './play'
 
 import { TweenVal } from './lerps'
 
-import { WhoHasAction, aww_action_type, aww_ontop, aww_who, Check, Call, Fold, Raise, AllIn, BigBlind, SmallBlind } from 'cardstwo'
+import { WhoHasAction, aww_action_type, who_next, aww_ontop, aww_who, Check, Call, Fold, Raise, AllIn, BigBlind, SmallBlind } from 'cardstwo'
 
 
 export type Chips = Array<number>
@@ -82,6 +82,7 @@ export class HeadsUp {
 
     this.m_me = createMemo(() => read(this._pov).who)
     this.m_who = createMemo(() => read(this._pov).who)
+    this.who2 = () => who_next(this.m_who())
 
     this.showdown = createMemo(() => read(this._pov).showdown)
 
@@ -124,6 +125,9 @@ export class HeadsUp {
         aww_action_type(_) === Fold)
     )
 
+    this.m_allow_raise = createMemo(() =>
+      my_actions().find(_ =>
+         aww_action_type(_) === Raise))
 
     this.current_actions = createMemo(() =>
       read(this._pov).current_action.actions
@@ -186,6 +190,52 @@ export class HeadsUp {
         (_, i) => make_card(_, 10 + 4 * 33 + 3, 76)))
 
     this.m_river = () => m_river_array()[0]
+
+
+
+    let m_showdown = createMemo(() => read(this._pov).showdown)
+    let m_showdown_middle = createMemo(() => m_showdown()?.middle)
+
+    let m_showdown_flop = createMemo(() => m_showdown_middle()?.flop),
+      m_showdown_turn = createMemo(() => m_showdown_middle()?.turn),
+      m_showdown_river = createMemo(() => m_showdown_middle()?.river),
+      m_showdown_hands = createMemo(() => m_showdown_middle()?.hands)
+    let m_showdown_hand2 = () => m_showdown_hands()?.get(this.who2())
+
+    let m_show_hand2 = create_delayed(m_showdown_hand2, () => 
+                                      m_showdown() ? ticks.seconds : undefined),
+      m_show_flop = create_delayed(m_showdown_flop, () => 
+                                   m_show_hand2() ? (!!this.m_flop().length > 0 ? 0 : ticks.seconds) : undefined),
+      m_show_turn = create_delayed(m_showdown_turn, () =>
+                                   m_show_flop() ? (!!this.m_turn() ? 0 : ticks.seconds) : undefined),
+      m_show_river = create_delayed(m_showdown_river, () =>
+                                   m_show_turn() ? (!!this.m_river() ? 0 : ticks.seconds) : undefined)
+      this.m_show_hand2 = () =>
+        m_show_hand2()?.map((_, i) =>
+          make_card(_, 131 + i * 32, 19)
+        )
+      
+      this.m_show_flop = () =>
+      m_show_flop()?.map((_, i) =>
+                         make_card(_, 10 + i * 33, 76))
+
+      this.m_show_turn = () => {
+        let _ = m_show_turn()
+        if (_) {
+          return make_card(_, 10 + 3 * 33 + 3, 76)
+        }
+      }
+      this.m_show_river = () => {
+        let _ = m_show_river()
+        if (_) {
+          return make_card(_, 10 + 4 * 33 + 3, 76)
+        }
+      }
+
+
+      createEffect(() => {
+        console.log(this.m_show_flop(), this.m_show_turn())
+      })
   }
 
 
@@ -252,4 +302,28 @@ const make_stack = (chips: number, fold_after: Timestamp | undefined, x: number,
     y,
     chips: format_chips(chips)
   }
+}
+
+
+export function create_delayed<T>(accessor: () => T | undefined, delay: () => number) {
+
+  const _delayed = createSignal(accessor())
+
+  let i_timeout
+
+  createEffect(() => {
+    accessor()
+    let res = delay()
+
+    clearTimeout(i_timeout)
+    if (res !== undefined) {
+      i_timeout = setTimeout(() => {
+        owrite(_delayed, accessor())
+      }, res)
+    } else {
+      owrite(_delayed, undefined)
+    }
+  })
+
+  return () => read(_delayed)
 }
