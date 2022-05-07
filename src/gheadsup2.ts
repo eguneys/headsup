@@ -84,22 +84,6 @@ export class HeadsUp {
     this.m_who = createMemo(() => read(this._pov).who)
     this.who2 = () => who_next(this.m_who())
 
-    this.showdown = createMemo(() => read(this._pov).showdown)
-
-    let fold_after_not_on_showdown = () => {
-      if (!this.showdown()) {
-        return read(this._fold_after)
-      }
-    }
-
-    this.m_stacks = createMemo(() => read(this._pov)
-                               .left_stacks
-                               .map((_, i) => 
-                                    make_stack(_,
-                                               this.m_current_who() === i+1 ? fold_after_not_on_showdown()
-                                               : undefined,
-                                               ...who_stack_pos(this.m_me(), i+1))))
-
     let my_actions = createMemo(() => {
       return read(this._pov).allowed_actions.filter(_ => aww_who(_) === this.m_who())
     })
@@ -191,7 +175,13 @@ export class HeadsUp {
 
     this.m_river = () => m_river_array()[0]
 
+    this.showdown = createMemo(() => read(this._pov).showdown)
 
+    let fold_after_not_on_showdown = () => {
+      if (!this.showdown()) {
+        return read(this._fold_after)
+      }
+    }
 
     let m_showdown = createMemo(() => read(this._pov).showdown)
     let m_showdown_middle = createMemo(() => m_showdown()?.middle)
@@ -233,9 +223,33 @@ export class HeadsUp {
       }
 
 
-      createEffect(() => {
-        console.log(this.m_show_flop(), this.m_show_turn())
-      })
+
+    let m_left_stacks = createMemo(() => read(this._pov)
+                                 .left_stacks)
+
+
+    let m_left_stacks_delayed = create_delayed(m_left_stacks, () =>
+
+                                               m_showdown() ? 
+                                                 (m_showdown_middle() ? 
+                                                  (m_show_river() ? ticks.seconds : ticks.seconds * 30) :
+                                                  ticks.seconds) :
+                                                  ticks.thirds)
+
+
+
+
+
+
+    this.m_stacks = createMemo(_ => m_left_stacks_delayed()
+          .map((_, i) => 
+               make_stack(_,
+                          this.m_current_who() === i+1 ? fold_after_not_on_showdown()
+                            : undefined,
+                            ...who_stack_pos(this.m_me(), i+1))))
+
+
+
   }
 
 
