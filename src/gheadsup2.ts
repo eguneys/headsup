@@ -1,6 +1,6 @@
 import { ticks } from './shared'
 
-import { mapArray, createMemo, on, createSignal, createEffect } from 'soli2d-js'
+import { untrack, mapArray, createMemo, on, createSignal, createEffect } from 'soli2d-js'
 import { read, write, owrite } from './play'
 
 import { TweenVal } from './lerps'
@@ -223,7 +223,34 @@ export class HeadsUp {
         }
       }
 
+      let m_show_middle_all = () => {
 
+        let river = this.m_show_river()
+        if (river) {
+          return [...this.m_show_flop(), this.m_show_turn(), river]
+        }
+      }
+
+    let m_winner_hands = () => {
+      return m_showdown()?.winner_hands
+    }
+
+    createEffect(() => {
+      let middle = m_show_middle_all()
+      if (middle) {
+        m_winner_hands()?.forEach(([who, [hv, hand]]) => {
+          let _hand = hand.slice(0)
+          middle.forEach(m => {
+            if (_hand.includes(m.card)) {
+              _hand.splice(_hand.indexOf(m.card), 1)
+              untrack(() => {
+                m.elevate()
+              })
+            }
+          })
+        })
+      }
+    })
 
     let m_left_stacks = createMemo(() => read(this._pov)
                                  .left_stacks)
@@ -251,6 +278,9 @@ export class HeadsUp {
 
 
 
+
+
+
   }
 
 
@@ -261,6 +291,7 @@ export class HeadsUp {
 
 const make_card = (card: OCard, x: number, y: number) => {
 
+  let _y = new TweenVal(y, y, ticks.seconds)
   let _reveal = new TweenVal(0, 1, ticks.half)
 
   let reveal_frame = () => _reveal.i
@@ -268,10 +299,16 @@ const make_card = (card: OCard, x: number, y: number) => {
   let rank = () => card_rank(card)
   let suit = () => card_suit(card)
 
+  let elevate = () => {
+    _y.new_b(y - 4)
+  }
+
   return {
     x,
-    y,
+    get y() { return _y.value },
+    card,
     reveal_frame,
+    elevate,
     rank,
     suit
   }
