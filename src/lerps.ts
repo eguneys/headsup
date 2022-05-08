@@ -229,7 +229,7 @@ export class TweenVal {
                   return this.a * (1 - this.i) + this.b * this.i
                 }
 
-                this._fvalue = createMemo(() => Math.floor(this._value()))
+                this._fvalue = createMemo(() => Math.round(this._value() * 100000) / 100000)
 
                 let [{update}] = useApp()
 

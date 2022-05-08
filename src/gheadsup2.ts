@@ -207,18 +207,18 @@ export class HeadsUp {
       
       this.m_show_flop = createMemo(() =>
       m_show_flop()?.map((_, i) =>
-                         make_card(_, 10 + i * 33, 76)))
+                         make_card(_, 10 + i * 33, 76, this.m_flop().length === 0)))
 
       this.m_show_turn = createMemo(() => {
         let _ = m_show_turn()
         if (_) {
-          return make_card(_, 10 + 3 * 33 + 3, 76)
+          return make_card(_, 10 + 3 * 33 + 3, 76, !this.m_turn())
         }
       })
       this.m_show_river = createMemo(() => {
         let _ = m_show_river()
         if (_) {
-          return make_card(_, 10 + 4 * 33 + 3, 76)
+          return make_card(_, 10 + 4 * 33 + 3, 76, this.m_river())
         }
       })
 
@@ -244,11 +244,8 @@ export class HeadsUp {
       if (middle) {
         m_winner_hands()?.forEach(([who, [hv, hand]]) => {
           let m_hands = m_hands_by_who().get(who)!
-
-          console.log(who, [...middle, ...m_hands].map(_ => card_rank(_.card)), hand.map(card_rank))
           let _hand = hand.slice(0, 5);
           [...middle, ...m_hands].forEach(m => {
-            console.log(_hand, m.card, _hand.includes(m.card))
             if (_hand.includes(m.card)) {
               _hand.splice(_hand.indexOf(m.card), 1)
               m.elevate()
@@ -295,12 +292,12 @@ export class HeadsUp {
   }
 }
 
-const make_card = (card: OCard, x: number, y: number) => {
+const make_card = (card: OCard, x: number, y: number, reveal: boolean = true) => {
 
   let _y = new TweenVal(y, y, ticks.seconds, TweenVal.quad_in_out)
   let _reveal = new TweenVal(0, 1, ticks.half)
 
-  let reveal_frame = () => _reveal.i
+  let reveal_frame = () => reveal ? _reveal.i : 1
 
   let rank = () => card_rank(card)
   let suit = () => card_suit(card)

@@ -56,25 +56,32 @@ return (<>
         <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/>
       }</For>
     }</Show>
-    <For each={props.headsup.m_show_flop()}>{ hand =>
-      <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/>
-    }</For>
-    <Show when={props.headsup.m_show_turn()}>{ hand =>
+
+    <Show when={props.headsup.m_river()}>{ hand =>
+     <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
+    }</Show>
+    <Show when={props.headsup.m_show_flop()}
+    fallback={
+      <For each={props.headsup.m_flop()}>{ hand =>
+        <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
+      }</For>
+    }>{ show_flop => 
+      <For each={props.headsup.m_show_flop()}>{ hand =>
+        <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/>
+      }</For>
+    }</Show>
+    <Show when={props.headsup.m_show_turn()}
+    fallback={
+      <Show when={props.headsup.m_turn()}>{ hand =>
+        <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
+      }</Show>
+    }>{ hand =>
       <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/>
     }</Show>
     <Show when={props.headsup.m_show_river()}>{ hand =>
       <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/>
     }</Show>
     <For each={props.headsup.m_hand()}>{ (hand) =>
-     <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
-    }</For>
-    <Show when={props.headsup.m_turn()}>{ hand =>
-     <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
-    }</Show>
-    <Show when={props.headsup.m_river()}>{ hand =>
-     <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
-    }</Show>
-    <For each={props.headsup.m_flop()}>{ hand =>
      <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
     }</For>
     <For each={props.headsup.m_stacks()}>{ stack =>
