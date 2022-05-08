@@ -6,15 +6,142 @@ import { onCleanup, onMount, Show, For, on, createEffect, createContext, useCont
 import { read, owrite, write, TweenVal } from './play'
 import { DragDecay, vec_transform_inverse_matrix } from './play'
 
+import { red } from './shared'
+
 
 const Game = (props) => {
+  return (<>
+      <HeadsUp headsup={props.headsup}/>
+      </>)
+}
+
+
+const HeadsUp = (props) => {
+return (<>
+    <Background/>
+   <HasPosition x={244} y={105}>
+      <Pot pot={props.headsup.m_pot()}/>
+    </HasPosition>
+    <HasPosition x={80} y={160}>
+      <ActionButton qs={[37 * 4, 32, 37, 14]} on_click={props.headsup.click_action} action={props.headsup.m_allow_fold()}/>
+    </HasPosition>
+    <HasPosition x={20} y={160}>
+      <ActionButton qs={[185, 32, 37, 14]} on_click={props.headsup.click_action} action={props.headsup.m_allow_check()}/>
+    </HasPosition>
+    <HasPosition x={20} y={160}>
+      <ActionButton qs={[112, 32, 37, 14]} on_click={props.headsup.click_action} action={props.headsup.m_allow_call()}/>
+    </HasPosition>
+    <HasPosition x={80} y={140}>
+      <ActionButton qs={[37 * 1, 32, 37, 14]} on_click={props.headsup.click_action} action={props.headsup.m_allow_allin()}/>
+    </HasPosition>
+    <HasPosition x={20} y={160}>
+      <ActionButton qs={[112, 32, 37, 14]}  on_click={props.headsup.click_action} action={props.headsup.m_allow_call()}/>
+    </HasPosition>
+    <HasPosition x={20} y={140}>
+      <ActionButton qs={[37*2, 32, 37, 14]}  on_click={props.headsup.click_action} action={props.headsup.m_allow_raise()}/>
+    </HasPosition>
+
+
+
+    <Show when={props.headsup.m_show_hand2()}
+    fallback={
+      <Show when={props.headsup.m_hand()}>
+        <For each={[1,2]}>{ (hand, i) =>
+          <HasPosition x={131+i() * 32} y={19}>
+            <BackCard/>
+          </HasPosition>
+        }</For>
+      </Show>
+    }
+    >{ value =>
+      <For each={value}>{ (hand, i) =>
+        <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/>
+      }</For>
+    }</Show>
+
+    <Show when={props.headsup.m_show_flop()}
+    fallback={
+      <For each={props.headsup.m_flop()}>{ hand =>
+        <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
+      }</For>
+    }>{ show_flop => 
+      <For each={props.headsup.m_show_flop()}>{ hand =>
+        <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/>
+      }</For>
+    }</Show>
+    <Show when={props.headsup.m_show_turn()}
+    fallback={
+      <Show when={props.headsup.m_turn()}>{ hand =>
+        <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
+      }</Show>
+    }>{ hand =>
+      <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/>
+    }</Show>
+    <Show when={props.headsup.m_show_river()}
+
+    fallback={
+    <Show when={props.headsup.m_river()}>{ hand =>
+     <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
+    }</Show>
+    }> { hand =>
+      <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/>
+    }</Show>
+
+    <For each={props.headsup.m_hand()}>{ (hand) =>
+     <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
+    }</For>
+    <For each={props.headsup.m_stacks()}>{ stack =>
+      <HasPosition x={stack.x} y={stack.y}>
+        <Stack stack={stack}/>
+      </HasPosition>
+    }</For>
+    <For each={props.headsup.m_actions()}>{ action =>
+      <HasPosition x={action.x} y={action.y}>
+        <TurnAction action={action}/>
+      </HasPosition>
+    }</For>
+    <Show when={props.headsup.m_status()}>{ value => 
+      <HasPosition x={20} y={64}>
+        <Status status={value}/>
+      </HasPosition>
+    }</Show>
+    </>)
+}
+
+
+const Status = (props) => {
+  return (<>
+    <Rectangle lum={2} y={6-props.status.x3 * 6} w={100} h={props.status.x3 * 12}/>
+    <Show when={props.status.x3===1}>
+      <For each={[0.2, 1,2,3,4,5,6,7,8]}>{_ => 
+        <Rectangle color={red} w={4} h={12} x={_ * 6 + (Math.sin(Math.PI * 1-props.status.x2))* _ * 6}/>
+      }</For>
+      <HasPosition x={props.status.x2 * 60} y={2}>
+        <Letters letters={props.status.letters}/>
+      </HasPosition>
+    </Show>
+      </>)
+}
+
+const CardWithRevealHasPosition = (props) => {
+  return (<HasPosition x={props.x} y={props.y}>
+    <Show when={props.hand.reveal_frame()<1}
+      fallback={
+        <Card rank={props.hand.rank()} suit={props.hand.suit()}/>
+      } >
+      <RevealCard frame={Math.floor(props.hand.reveal_frame()*5)}/>
+    </Show>
+  </HasPosition> )
+}
+
+const GameOld = (props) => {
 
   return (<>
      <HeadsUp headsup={props.headsup}/>
     </>)
 }
 
-const HeadsUp = (props) => {
+const HeadsUpOld = (props) => {
   return (<>
       <Background/>
       <HeadsUpMiddle middle={props.headsup.middle}/>
@@ -34,10 +161,10 @@ const HeadsUp = (props) => {
 const Stack = (props) => {
   return (<>
       
-      <Anim qs={[47 + 50 * props.stack.turn_frame, 5, 50, 11]} x={0} y={-11}/>
+      <Anim qs={[47 + 50 * props.stack.turn_frame(), 5, 50, 11]} x={0} y={-11}/>
       <Anim qs={[50, 16, 50, 13]}/> 
     <HasPosition y={-2}>
-      <Show when={props.stack.i_width}>{ value =>
+      <Show when={props.stack.i_width()}>{ value =>
         <>
         <Anim size={Vec2.make(50, 2)} qs={[466, 33, 1, 1]}/>
         <Anim size={Vec2.make(value * 50, 2)} qs={[465, 33, 1, 1]}/>
@@ -45,7 +172,7 @@ const Stack = (props) => {
       }</Show>
     </HasPosition>
       <HasPosition x={2} y={2}>
-        <Chips digits={read(props.stack.chips.digits)} />
+        <Chips digits={props.stack.chips} />
       </HasPosition>
    </>)
 }
@@ -63,12 +190,22 @@ const Chips = props => {
       </>)
 }
 
+const Letters = props => {
+  return (<>
+    <For each={props.letters}>{(letter, i) =>
+      <HasPosition x={i()*4} y={0}>
+        <Anim qs={[112 + letter * 8, 80, 8, 7]}/>
+      </HasPosition>
+    }</For>
+      </>)
+}
+
 const Pot = props => {
   return (<>
     <Anim qs={[100 + 7 * 49, 16, 49, 12]} y={-12}/>
     <Anim qs={[0, 16, 50, 13]}/>
     <HasPosition x={2} y={2}>
-      <Chips digits={read(props.pot_chips.digits)}/>
+      <Chips digits={props.pot}/>
     </HasPosition>
     </>)
 }
@@ -86,13 +223,12 @@ const CurrentAction = props => {
 
 const TurnAction = (props) => {
   return (<>
-
         <TweenPosition x={0} iy={0} y={-12}>
         <Anim qs={[100 + props.action.frame * 49, 16, 49, 12]}/>
         </TweenPosition>
         <Anim qs={[0, 16, 50, 13]}/>
         <HasPosition x={2} y={2}>
-          <Chips digits={read(props.action.amount.digits)}/>
+          <Chips digits={props.action.amount}/>
         </HasPosition>
         </>)
 }
@@ -120,9 +256,9 @@ const AllowedActions = (props) => {
 
 const ActionButton = props => {
   return (<>
-      <Show when={props.action.allowed}>{ value => 
+      <Show when={props.action}>{ value => 
       <>
-      <DropTarget onClickDown={props.action.on_click_down} onClick={props.action.on_click} qs={[0, 0, 37, 14]}/>
+      <DropTarget onClick={_ => props.on_click(value)} qs={[0, 0, 37, 14]}/>
       <Anim qs={[0, 32, 37, 14]}/>
       <Anim qs={props.qs}/>
       </>
@@ -208,8 +344,7 @@ const CardStack = props => {
 
 const BackCard = (props) => {
   return (<>
-      <Anim qs={[60, 48, 30, 40]} x={1} y={1}/>
-      <Anim qs={[30, 48, 30, 40]}/>
+      <Anim qs={[90, 96, 30, 40]}/>
       </>)
 }
 
@@ -232,12 +367,13 @@ const RevealCard = (props) => {
 
 const Card = (props) => {
 
+  let color = props.suit % 2
   return (<>
       <DropTarget set_ref={props.set_ref} onDrag={props.onDrag} qs={[0, 48, 30, 40]}/>
       <Anim qs={[60, 96, 30, 40]} x={props.shadow || 1} y={props.shadow || 1}/>
       <Anim qs={[0, 96, 30, 40]}/>
-      <Anim qs={[0, 80, 6, 6]} x={22} y={2}/>
-      <Anim qs={[0, 64, 8, 6]} x={2} y={2}/>
+      <Anim qs={[0 + (props.suit - 1) * 6, 80 + color * 6, 6, 6]} x={22} y={2}/>
+      <Anim qs={[0 + (props.rank - 1) * 8, 64 + color * 6, 8, 6]} x={2} y={2}/>
       </>)
 }
 
@@ -293,6 +429,10 @@ export const Anim = (props) => {
           x={props.x}
           y={props.y}
           />)
+}
+
+const Rectangle = (props) => {
+  return (<Anim qs={[0 + (props.lum ?? 2) * 2, 0 + (props.color ?? 0) * 2, 1, 1]} size={Vec2.make(props.w, props.h)} x={props.x} y={props.y}/>)
 }
 
 const Background = () => {

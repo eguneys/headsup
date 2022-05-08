@@ -1,6 +1,7 @@
 import { default as app } from './main'
 import { HeadsUpGame, HeadsUpRound, ActionWithWho, WhoHasAction } from 'cardstwo'
 import { random } from 'cardstwo'
+import { aww_ontop } from 'cardstwo'
 
 class Scheduler {
   schedule(fn: () => void, ms: number) {
@@ -18,10 +19,15 @@ export default function main(element: HTMLElement) {
 
     return {
       fen: pov.fen,
-      fold_after
+      fold_after,
+      on_showdown
     }
   }
 
+  function on_showdown() {
+
+    console.log('here')
+  }
 
     function apply(aww: ActionWithWho) {
       game.apply(aww)
@@ -34,6 +40,7 @@ export default function main(element: HTMLElement) {
 
       let { fold_after } = game
 
+      console.log('ai ontop', game.round.allowed_actions.map(aww_ontop))
       let res = random(game.round.pov_of(_pov))
 
       if (res) {
@@ -43,13 +50,27 @@ export default function main(element: HTMLElement) {
       }
     }
 
-
-    function on_new_round() {
-      console.log('here')
-      console.log(game)
+    function on_new_action() {
+      let config = json(game, 1)
+      api.s_set_config(config)
+      ai(game, 2)
     }
 
-  let game = HeadsUpGame.make(scheduler, on_new_round, 10)
+    function on_new_round() {
+      let config = json(game, 1)
+      api.s_set_config(config)
+      ai(game, 2)
+    }
+
+
+    function on_winner() {
+      let config = json(game, 1)
+      api.s_set_config(config)
+      console.log('winner', game.winner)
+    }
+
+  let game = HeadsUpGame.make(scheduler, on_new_action, on_new_round, on_winner, 10)
+
 
   let api
 
