@@ -21,6 +21,10 @@ export default class Anim {
     this.config.on_action?.(aww)
   }
 
+  g_showdown() {
+    this.config.on_showdown?.()
+  }
+
   s_set_back(back: HeadsUpRoundPov) {
     let back0 = this.back
     this.back = back
@@ -47,6 +51,12 @@ export default class Anim {
       if (action) {
         this.g_action(action)
       }
+    })
+
+    createEffect(() => {
+      this.front.on_showdown
+
+      this.g_showdown()
     })
   }
 

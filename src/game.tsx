@@ -6,6 +6,8 @@ import { onCleanup, onMount, Show, For, on, createEffect, createContext, useCont
 import { read, owrite, write, TweenVal } from './play'
 import { DragDecay, vec_transform_inverse_matrix } from './play'
 
+import { red } from './shared'
+
 
 const Game = (props) => {
   return (<>
@@ -17,7 +19,7 @@ const Game = (props) => {
 const HeadsUp = (props) => {
 return (<>
     <Background/>
-    <HasPosition x={244} y={105}>
+   <HasPosition x={244} y={105}>
       <Pot pot={props.headsup.m_pot()}/>
     </HasPosition>
     <HasPosition x={80} y={160}>
@@ -57,9 +59,6 @@ return (<>
       }</For>
     }</Show>
 
-    <Show when={props.headsup.m_river()}>{ hand =>
-     <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
-    }</Show>
     <Show when={props.headsup.m_show_flop()}
     fallback={
       <For each={props.headsup.m_flop()}>{ hand =>
@@ -78,9 +77,16 @@ return (<>
     }>{ hand =>
       <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/>
     }</Show>
-    <Show when={props.headsup.m_show_river()}>{ hand =>
+    <Show when={props.headsup.m_show_river()}
+
+    fallback={
+    <Show when={props.headsup.m_river()}>{ hand =>
+     <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
+    }</Show>
+    }> { hand =>
       <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/>
     }</Show>
+
     <For each={props.headsup.m_hand()}>{ (hand) =>
      <CardWithRevealHasPosition x={hand.x} y={hand.y} hand={hand}/> 
     }</For>
@@ -94,7 +100,27 @@ return (<>
         <TurnAction action={action}/>
       </HasPosition>
     }</For>
+    <Show when={props.headsup.m_status()}>{ value => 
+      <HasPosition x={20} y={64}>
+        <Status status={value}/>
+      </HasPosition>
+    }</Show>
     </>)
+}
+
+
+const Status = (props) => {
+  return (<>
+    <Rectangle lum={2} y={6-props.status.x3 * 6} w={100} h={props.status.x3 * 12}/>
+    <Show when={props.status.x3===1}>
+      <For each={[0.2, 1,2,3,4,5,6,7,8]}>{_ => 
+        <Rectangle color={red} w={4} h={12} x={_ * 6 + (Math.sin(Math.PI * 1-props.status.x2))* _ * 6}/>
+      }</For>
+      <HasPosition x={props.status.x2 * 60} y={2}>
+        <Letters letters={props.status.letters}/>
+      </HasPosition>
+    </Show>
+      </>)
 }
 
 const CardWithRevealHasPosition = (props) => {
@@ -161,6 +187,16 @@ const Chips = props => {
     <HasPosition x={10*4} y={0}>
       <Anim qs={[120 + 10 * 8, 48, 8, 7]}/> 
     </HasPosition>
+      </>)
+}
+
+const Letters = props => {
+  return (<>
+    <For each={props.letters}>{(letter, i) =>
+      <HasPosition x={i()*4} y={0}>
+        <Anim qs={[112 + letter * 8, 80, 8, 7]}/>
+      </HasPosition>
+    }</For>
       </>)
 }
 
@@ -393,6 +429,10 @@ export const Anim = (props) => {
           x={props.x}
           y={props.y}
           />)
+}
+
+const Rectangle = (props) => {
+  return (<Anim qs={[0 + (props.lum ?? 2) * 2, 0 + (props.color ?? 0) * 2, 1, 1]} size={Vec2.make(props.w, props.h)} x={props.x} y={props.y}/>)
 }
 
 const Background = () => {

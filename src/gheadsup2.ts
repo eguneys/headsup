@@ -3,13 +3,14 @@ import { ticks } from './shared'
 import { untrack, mapArray, createMemo, on, createSignal, createEffect } from 'soli2d-js'
 import { read, write, owrite } from './play'
 
-import { TweenVal } from './lerps'
+import { TweenVal, LoopVal, PingPongVal } from './lerps'
 
 import { whos, WhoHasAction, aww_action_type, who_next, aww_ontop, aww_who, Check, Call, Fold, Raise, AllIn, BigBlind, SmallBlind } from 'cardstwo'
 import { card_rank, card_suit } from 'cardstwo'
 
 
 export type Chips = Array<number>
+export type Letters = Array<number>
 
 const digit_frames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'P', ',']
 
@@ -22,6 +23,14 @@ export function format_chips(chips: number) {
   })
   return res.map(_ => digit_frames.indexOf(_))
 }
+
+const letter_frames = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','!','0','1','2','3','4','5','6','7','8','9', 'P', ',']
+
+export function format_letters(str: string) {
+  return str.split('').map(_ => letter_frames.indexOf(_))
+}
+
+const hand_values = ['', 'high card', 'one pair']
 
 export function who_diff(me: WhoHasAction, who: WhoHasAction) {
   return ((me - who) + 2) % 2
@@ -43,10 +52,14 @@ const aww_action_type_frames = [0, 1, 2, 3, 4, 5, 6]
 export class HeadsUp {
 
   _on_action: Signal<ActionWithWho | undefined>
+  _on_showdown: Signal<undefined>
 
   _pov: Signal<HeadsUpRoundPov>
 
   _fold_after: Signal<Timestamp>
+
+
+  _status: Signal<Letters>
 
   m_stacks: Memo<[Chips, Chips]>
 
@@ -57,6 +70,14 @@ export class HeadsUp {
   m_allow_allin: Memo<ActionWithWho>
 
   m_actions: Memo<Array<CurrentAction>>
+
+  set status(str: string) {
+    owrite(this._status, str)
+  }
+
+  get on_showdown() {
+    return read(this._on_showdown)
+  }
 
   get on_action() {
     return read(this._on_action)
@@ -75,6 +96,8 @@ export class HeadsUp {
   }
 
   constructor(pov: HeadsUpRoundPov, fold_after: Timestamp) {
+    this._status = createSignal('')
+    this._on_showdown = createSignal(undefined, { equals: false })
     this._on_action = createSignal(undefined, { equals: false })
     this._fold_after = createSignal(fold_after)
     this._pov = createSignal(pov)
@@ -200,6 +223,11 @@ export class HeadsUp {
                                    m_show_flop() ? (!!this.m_turn() ? 0 : ticks.seconds) : undefined),
       m_show_river = create_delayed(m_showdown_river, () =>
                                    m_show_turn() ? (!!this.m_river() ? 0 : ticks.seconds) : undefined)
+
+
+      let m_showdown_end = create_delayed(m_show_river, () => ticks.seconds)
+      
+
       this.m_show_hand2 = createMemo(() =>
         m_show_hand2()?.map((_, i) =>
           make_card(_, 131 + i * 32, 19)
@@ -222,12 +250,12 @@ export class HeadsUp {
         }
       })
 
-      let m_show_middle_all = createMemo(() => {
+      let m_show_middle_all = createMemo(on(this.m_show_river, () => {
         let river = this.m_show_river()
         if (river) {
           return [...this.m_show_flop(), this.m_show_turn(), river]
         }
-      })
+      }))
 
     let m_winner_hands = createMemo(() => {
       return m_showdown()?.winner_hands
@@ -238,6 +266,15 @@ export class HeadsUp {
                               [who, [this.m_hand(),
                                 this.m_show_hand2()][who_diff(this.m_me(), who)]])))
 
+    createEffect(on(m_show_middle_all, () => {
+      let hands = m_winner_hands()?.[0]
+      if (hands) {
+        let [who, [hv, hand]] = hands
+        this.status = hand_values[hv]
+      } else {
+        this.status = undefined
+      }
+    }))
 
     createEffect(on(m_show_middle_all, () => {
       let middle = m_show_middle_all()
@@ -254,6 +291,12 @@ export class HeadsUp {
         })
       }
     }))
+
+    createEffect(() => {
+      m_showdown_end()
+
+      owrite(this._on_showdown, undefined)
+    })
 
     let m_left_stacks = createMemo(() => read(this._pov)
                                  .left_stacks)
@@ -281,14 +324,32 @@ export class HeadsUp {
 
 
 
-
-
-
+    this.m_status = createMemo(() => {
+      let res = read(this._status)
+      if (res) {
+        return make_status(res)
+      }
+    })
   }
 
 
   click_action = (aww: ActionWithWho) => {
     owrite(this._on_action, aww)
+  }
+}
+
+const make_status = (str: string) => {
+  let _x = new LoopVal(0, 1, ticks.seconds)
+
+  let _x2 = new PingPongVal(0, 1, ticks.seconds, TweenVal.quad_in_out)
+
+  let _x3 = new TweenVal(0, 1, ticks.half)
+
+  return {
+    get x3() { return _x3.value },
+    get x2() { return _x2.value },
+    get x() { return _x.value },
+    letters: format_letters(str)
   }
 }
 

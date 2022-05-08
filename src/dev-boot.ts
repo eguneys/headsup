@@ -19,10 +19,15 @@ export default function main(element: HTMLElement) {
 
     return {
       fen: pov.fen,
-      fold_after
+      fold_after,
+      on_showdown
     }
   }
 
+  function on_showdown() {
+
+    console.log('here')
+  }
 
     function apply(aww: ActionWithWho) {
       game.apply(aww)
@@ -57,7 +62,14 @@ export default function main(element: HTMLElement) {
       ai(game, 2)
     }
 
-  let game = HeadsUpGame.make(scheduler, on_new_action, on_new_round, 10)
+
+    function on_winner() {
+      let config = json(game, 1)
+      api.s_set_config(config)
+      console.log('winner', game.winner)
+    }
+
+  let game = HeadsUpGame.make(scheduler, on_new_action, on_new_round, on_winner, 10)
 
 
   let api
